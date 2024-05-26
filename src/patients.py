@@ -2,7 +2,6 @@ import wfdb
 import numpy as np
 import matplotlib.pyplot as plt
 
-#patients = wfdb.get_record_list('ptbdb') #creates a list containing the directories of all the ECGs within the data base
 
 class Patient:
     def __init__(self, name, age, gender, health_state, diagnosis, smoker):
@@ -154,6 +153,9 @@ class PatientCollection:
     def get_diagnosis_list(self):
         return self._diagnosis_list
     
+    def get_diagnoses(self):
+        return [patient._health_state for patient in self._patients]
+    
     def get_diagnosis_counts(self):
         diagnoses = [patient._diagnosis for patient in self._patients] #creates list of each diagnosis within the patients in the list
         diagnosis_counts = {diagnosis: diagnoses.count(diagnosis) for diagnosis in set(diagnoses)} #counts each diagnosis, set()removes repeats
@@ -173,7 +175,7 @@ class PatientCollection:
     def plot_sample_ecg(self):
         plot_indx = np.random.randint(0, self.count_patients())
         patient = self.get_patient(plot_indx)
-        patient.plot_ecg()
+        patient.plot_ecg()        
 
 
 def filter_database(patients, sample_length, duplicate_data_filtering, age_data_filtering, smoking_data_filtering, gender_data_filtering):

@@ -2,7 +2,7 @@ import wfdb
 import numpy as np
 import matplotlib.pyplot as plt
 
-patients = wfdb.get_record_list('ptbdb') #creates a list containing the directories of all the ECGs within the data base
+#patients = wfdb.get_record_list('ptbdb') #creates a list containing the directories of all the ECGs within the data base
 
 class Patient:
     def __init__(self, name, age, gender, health_state, diagnosis, smoker):

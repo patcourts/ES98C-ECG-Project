@@ -1,11 +1,11 @@
 import wfdb
 import numpy as np
-import tqdm
+from tqdm import tqdm
 
 from filter import filter_database
 from preprocessing import denoise_signals
 from utils import get_sig_array_from_patients, get_nan_indices
-from parameterisation import get_time_domain_params
+from parameterisation import get_all_params
 
 
 #creates a list containing the directories of all the ECGs within the data base
@@ -36,9 +36,8 @@ denoised_signals = denoise_signals(signals, DWT_state = True, butterworth_state 
 #finding signals that have been removed due to poor quality
 nan_indices = get_nan_indices(signals)
 
-
-#getting time parameters
-time_params = get_time_domain_params(signals)
+#getting all parameters
+params = get_all_params(signals, allowed_patients, nan_indices)
 
 
 

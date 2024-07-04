@@ -78,7 +78,7 @@ class Patient:
         return self._channel_names
     
     def get_desired_sample_length(self):
-        return self._desired_sample_length 
+        return self._desired_sample_length
     
     def get_info(self):
         info = f"Name: {self._name} \n Age: {self._age}\n Gender: {self._gender}\n"
@@ -95,25 +95,24 @@ class Patient:
     def read_record(self, given_channel_names=None):
         if given_channel_names is not None:
             self.set_channel_names(given_channel_names)
-        record = wfdb.rdrecord('ptb-diagnostic-ecg-database-1.0.0/ptb-diagnostic-ecg-database-1.0.0/' + self.get_docstring(), channel_names = self.get_channel_names(), sampto = self.get_desired_sample_length())
+        record = wfdb.rdrecord('C:\\Users\\court\\Documents\\masters\\solo project\\ES98C-ECG-Project\\ptb-diagnostic-ecg-database-1.0.0\\ptb-diagnostic-ecg-database-1.0.0\\' + self.get_docstring(), channel_names = self.get_channel_names(), sampto = self.get_desired_sample_length())
         return record
     
     def read_signal(self, given_channel_names = None):
         if given_channel_names is not None:
             self.set_channel_names(given_channel_names)
-        signal, _ = wfdb.rdsamp('ptb-diagnostic-ecg-database-1.0.0/ptb-diagnostic-ecg-database-1.0.0/' + self.get_docstring(), channel_names = self.get_channel_names(), sampto = self.get_desired_sample_length())
+        signal, _ = wfdb.rdsamp('C:\\Users\\court\\Documents\\masters\\solo project\\ES98C-ECG-Project\\ptb-diagnostic-ecg-database-1.0.0\\ptb-diagnostic-ecg-database-1.0.0\\' + self.get_docstring(), channel_names = self.get_channel_names(), sampto = self.get_desired_sample_length())
         return signal
+    
+    def get_signal(self):
+        return self._signal
     
     def plot_channels(self, channel_names):
         record = self.read_record(given_channel_names = channel_names)
         wfdb.plot_wfdb(record=record, title='Channel(s) '+ ', '.join(channel_names) + ' for '+ self._name)
         
-#     def get_signal(self, given_channel_names = None):
-#         if given_channel_names is not None:
-#             self.set_channel_names(given_channel_names)
-#             self.read_signal(given_channel_names)
-#         return self._signal
-
+        
+        
 class PatientCollection:
     def __init__(self):
         self._patients = []
@@ -125,7 +124,6 @@ class PatientCollection:
         
         
     def get_patients(self, indx):
-        #change this too work for multiple patients
         return self._patients[indx] 
     
     
@@ -165,7 +163,12 @@ class PatientCollection:
         diagnosis_counts = self.get_diagnosis_counts()
         fig, axes = plt.subplots(1, 1, figsize = (12, 10))
         
-        axes.bar(diagnosis_counts.keys(), diagnosis_counts.values())
+        bars = axes.bar(diagnosis_counts.keys(), diagnosis_counts.values())
+        
+        # annotate the values on top of each bar
+        for bar in bars:
+            yval = bar.get_height()
+            plt.text(bar.get_x() + bar.get_width()/2.0, yval, int(yval), ha='center', va='bottom')
         axes.set_xlabel('Diagnosis')
         axes.set_ylabel('Count')
         axes.set_title('Diagnosis Distribution')
@@ -175,87 +178,8 @@ class PatientCollection:
     def plot_sample_ecg(self):
         plot_indx = np.random.randint(0, self.count_patients())
         patient = self.get_patient(plot_indx)
-        patient.plot_ecg()        
-
-
-def filter_database(patients, sample_length, duplicate_data_filtering, age_data_filtering, smoking_data_filtering, gender_data_filtering):
-    #indexes from the database metadata
-    age_meta_idx = 0
-    smoking_meta_idx = 8
-    gender_meta_idx = 1
-    diagnosis_meta_idx = 4
-    previous_label = 'n/a'
-
-    allowed_patients = PatientCollection()
-
-    for i in range(0, len(patients)):
-        #creating new patient instance
-        new_Patient = Patient(None, None, None, None, None, None)
-        new_Patient.set_desired_sample_length(sample_length)
+        patient.plot_ecg()
         
-        #setting bool to true unless conditions for appending is not met
-        append = True
-        
-        #try and except clause to ensure only ECGs longer than the minimum length are kept
-        try:
-            
-            record = wfdb.rdrecord('ptb-diagnostic-ecg-database-1.0.0/ptb-diagnostic-ecg-database-1.0.0/' + patients[i], channel_names = new_Patient.get_channel_names(), sampto = new_Patient.get_desired_sample_length())
-            signals, fields = wfdb.rdsamp('ptb-diagnostic-ecg-database-1.0.0/ptb-diagnostic-ecg-database-1.0.0/' + patients[i], sampto = new_Patient.get_desired_sample_length(), channel_names = new_Patient.get_channel_names())
-            
-            #append ECG data to Patient instance
-            new_Patient.set_ecg_data(record)
-            new_Patient.set_signal(signals)
-            
-            new_Patient.set_docstring(patients[i])
-            
-            #labelling the diagnosis within the class
-            if record.comments[diagnosis_meta_idx][22:] not in allowed_patients.get_diagnosis_list():
-                append = False
-            else:
-                new_Patient.set_diagnosis(record.comments[diagnosis_meta_idx][22:])
-                
-            #labelling the health state of each patient class
-            if record.comments[diagnosis_meta_idx][22:] == 'Healthy control':
-                new_Patient.set_health_state('Healthy')
-            else:
-                new_Patient.set_health_state('Unhealthy')
-            
-            if age_data_filtering:
-                #making sure age meta data is available
-                if record.comments[age_meta_idx] == None:
-                    append = False
-                else:
-                    new_Patient.set_age(int(record.comments[age_meta_idx][5:]))
-                    
-            if smoking_data_filtering:
-                #ensuring smoking meta data is available
-                print(record.comments[smoking_meta_idx][8:])
-                if record.comments[smoking_meta_idx][8:] not in ('yes', 'no'):
-                    append = False
-                else:
-                    new_Patient.set_smoker_status(record.comments[smoking_meta_idx][8:])
-                    
-            if gender_data_filtering:
-                #ensuring gender meta data is available
-                if record.comments[gender_meta_idx][5:] not in ('male', 'female'):
-                    append = False
-                else:
-                    new_Patient.set_gender(record.comments[gender_meta_idx][5:])
-                
-            if duplicate_data_filtering:
-                #only appending the first ECG from each patient to remove duplicates
-                patient_number = patients[i][:10]
-                if patient_number == previous_label:
-                    append = False
-                else:
-                    previous_label = patient_number
-                    new_Patient.set_name(patients[i][:10])
-                        
-            if append:
-                allowed_patients.add_patient(new_Patient)
-            
-        except ValueError as ve:
-        #    print(f"Error reading record for patient {patients[i]}: {ve}")
-            None
     
-    return allowed_patients
+        
+        

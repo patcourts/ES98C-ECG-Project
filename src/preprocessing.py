@@ -1,56 +1,66 @@
-from scipy.signal import butter, filtfilt #for the butterworth filter
-import pickle
-import gzip
 import numpy as np
-from tqdm import tqdm
+from scipy.signal import butter, filtfilt #for the butterworth filter
+import pywt #for DWT
 
 
-# Load allowed_patients from the compressed pickle file
-try:
-    with gzip.open('allowed_patients.pkl.gz', 'rb') as f:
-        allowed_patients = pickle.load(f)
-    print(len(allowed_patients))  # Now you can use allowed_patients in your script
-except FileNotFoundError:
-    print("The file allowed_patients.pkl.gz was not found.")
-except Exception as e:
-    print(f"An error occurred: {e}")
+#high-pass butterworth filter removes baseline wander
+def butter_highpass(cutoff, fs, order=5):
+    nyquist = 0.5 * fs
+    normal_cutoff = cutoff / nyquist
+    b, a = butter(order, normal_cutoff, btype='high', analog=False)
+    return b, a
 
+#band-pass butterworth filter to remove noise
+def butter_bandpass(lowcut, highcut, fs, order=5):
+    nyquist = 0.5 * fs
+    low = lowcut / nyquist
+    high = highcut / nyquist
+    b, a = butter(order, [low, high], btype='band')
+    return b, a
 
-#
-no_patients = allowed_patients.count_patients()
-sample_length = allowed_patients.get_patients(0).get_desired_sample_length()
-
-
-signals = np.zeros(shape=(no_patients, sample_length))
-for i in tqdm(range(0, no_patients)):
-    signal = allowed_patients.get_patients(i).read_signal(['v1']).reshape(-1)
-    signals[i] = signal
-
-
-#define the cutoff frequency for the Butterworth filter
-cutoff_freq = 1  # Adjust this value based on the characteristics of your signal
-
-# Normalize the cutoff frequency
-nyquist_freq = 500  # Nyquist frequency is half the sampling frequency
-normalized_cutoff = cutoff_freq / nyquist_freq
-
-#order
-order = 3
-
-def butterworth_detrending(signal, cut_off_freq, nyquist_freq, order):
-    normalised_cut_off = cut_off_freq/nyquist_freq
+def denoise(signal, butter=False, DWT=False, normalise=False):
     
-    b, a = butter(order, normalized_cutoff, btype='low')
+    sample_freq = 1000
+    
+    if butter and DWT:
+        print('only one filter can be applied to the data')
+        return None
+        
+    if butter:
+        cutoff_frequency = 0.5  # Cutoff frequency in Hz (remove frequencies below this)
+        b, a = butter_highpass(cutoff_frequency, sample_freq)
+        baseline_removed_signal = filtfilt(b, a, signal)
+        
+        lowcut = 1 # Lower bound of the band-pass filter
+        highcut = 50  # Upper bound of the band-pass filter
+        b, a = butter_bandpass(lowcut, highcut, sample_freq)
+        denoised_signal = filtfilt(b, a, baseline_removed_signal)
+        
+    elif DWT:
+        coeffs = pywt.wavedec(signal, wavelet='db4')
+        set_to_zero = [0, 1, 2, 3, 4]
+        level_to_zero = 9
+        for i in range(0, len(coeffs)):
+            if i in set_to_zero or i > level_to_zero:
+                coeffs[i] = np.zeros_like(coeffs[i])
+        denoised_signal = pywt.waverec(coeffs, wavelet='db4')
+        
+    if normalise:
+        norm_denoised_signal = (denoised_signal - denoised_signal.min())/(denoised_signal.max()-denoised_signal.min())
+        return norm_denoised_signal
+    return denoised_signal
 
-    baseline = filtfilt(b, a, signal)#thought this would give the detrended signal but gives a very good fit here
-    detrended_signal = signal-baseline
-    return detrended_signal
 
-
-butterworth_detrended_signals = np.zeros(shape=(no_patients, sample_length))
-trends = np.zeros(shape=(no_patients, sample_length))
-
-for i, signal in enumerate(signals):
-    butterworth_detrended_signals[i] = butterworth_detrending(signal, cutoff_freq, nyquist_freq, order)
-
-#only does it for one singular channel
+def denoise_signals(signals, DWT_state, butterworth_state, normalise_state):
+    #denoising the signals through desired method
+    if DWT_state:
+        print('denoising signals through Discrete Wavelet Transform')
+    elif butterworth_state:
+        print('denoising signals through butterworth filter method')
+    if normalise_state:
+        print('normalising signals')
+    denoised_signals = np.zeros(shape=(signals.shape))
+    for i, signal in enumerate(signals):
+        for j in range(0, len(signals[0, :])):
+            denoised_signals[i][j] = denoise(signal[j], DWT=DWT_state, normalise=normalise_state, butter = butterworth_state)
+    return denoised_signals

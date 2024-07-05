@@ -4,10 +4,10 @@ from tqdm import tqdm
 
 from filter import filter_database
 from preprocessing import denoise_signals
-from utils import get_sig_array_from_patients, get_nan_indices, convert_multi_dict_to_array, convert_multi_dict_to_array1
+from utils import get_sig_array_from_patients, get_nan_indices, convert_multi_dict_to_array, convert_multi_dict_to_array1, get_reconstructed_probabilities
 from parameterisation import get_all_params
 from feature_selection import select_features
-from binary_classification import get_best_estimators, get_scores_and_probs
+from binary_classification import get_best_estimators, get_scores_and_probs, optimise_score_over_channels
 from scoring_metrics import scoring_function, print_scores_for_channel
 
 #creates a list containing the directories of all the ECGs within the data base
@@ -69,8 +69,17 @@ param_grid = {
 #find the best set of hyperparameters for each channel, tuned on the desired scoring function
 best_estimators = get_best_estimators(selected_features_array, param_grid, scoring_function, health_state, nan_indices)
 
-#perform skfold to get scores for each channel as well as their probabilities
-score, bal_acc, probabilities, sample_percentages, y_tests, test_indices = get_scores_and_probs(selected_features_array, health_state, nan_indices, best_estimators, scoring_function, n_splits=3)
+#perform 3 way skfold to get scores for each channel as well as their probabilities
+n_splits = 3
+score, bal_acc, probabilities, thresholds, y_tests, test_indices = get_scores_and_probs(selected_features_array, health_state, nan_indices, best_estimators, scoring_function, n_splits)
 
 #printing scores for each channel
 print_scores_for_channel(score, bal_acc)
+
+#reconstructing calculated probabilities so can optimise over all channels
+reconstructed_probs = get_reconstructed_probabilities(probabilities, test_indices, nan_indices, no_patients, n_splits)
+
+#optimising over channels
+best_score, best_channel_indices = optimise_score_over_channels(reconstructed_probs, thresholds, health_state)
+
+print(best_score, best_channel_indices)

@@ -1,6 +1,8 @@
 import numpy as np
 from sklearn.metrics import confusion_matrix
+
 import pandas as pd
+
 
 
 def get_balanced_accuracy(y_test, y_pred):
@@ -98,3 +100,6 @@ def print_scores_for_channel(score_accuracy, balanced_accuracy):
 
     df = pd.DataFrame(data)
     print(df)
+
+    return None
+

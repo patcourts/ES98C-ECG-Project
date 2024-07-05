@@ -1,7 +1,8 @@
 from sklearn.model_selection import train_test_split, GridSearchCV, StratifiedKFold
 from sklearn.svm import SVC
 import numpy as np
-from scoring_metrics import get_balanced_accuracy
+from scoring_metrics import get_balanced_accuracy, objective_score
+import itertools
 
 def tune_hyperparams(params, health_state, param_grid, scorer='balanced_accuracy'):
     
@@ -79,3 +80,53 @@ def get_scores_and_probs(params, health_state, nan_indices, best_estimators, sco
         test_indices.append(test_indice)
     
     return score_accuracy, balanced_accuracy, probs, thresholds, y_tests, test_indices
+
+def average_probabilities(probs, channels):
+    average_probs = []
+    for channel in channels:
+        average_probs.append(probs[channel])
+
+    return np.nanmean(average_probs, axis=0)
+
+def manual_y_predict(average_probs, threshold):
+    manual_y_pred = np.empty(len(average_probs), dtype=object)
+    for j in range(0, len(average_probs)):
+        if average_probs[j] > 0.3:
+            manual_y_pred[j] = 'Healthy'
+        elif average_probs[j] <= 0.3:
+            manual_y_pred[j] = 'Unhealthy'
+        elif average_probs[j] is None:
+            manual_y_pred[j] = np.nan
+    return manual_y_pred
+
+def optimise_score_over_channels(reconstructed_probs, thresholds, health_state):
+    #calculate all possible combinations of channel indices
+    channel_indices_list = [0, 1, 2, 3, 4, 5]
+    all_combinations = []
+    for r in range(1, len(channel_indices_list) + 1):
+        combination = list(itertools.combinations(channel_indices_list, r))
+        all_combinations.extend(combination)
+
+    best_score = 0
+    best_channel_indices = []
+    for combo in all_combinations:
+        
+        # Use combo to get channel indices
+        selected_channel_indices = [channel_indices_list[i] for i in combo]
+        
+        #print(selected_channel_indices)
+        #no longer have any splits
+        #combo_probs = average_probabilities(probs, n_splits, selected_channel_indices)
+        #manual_pred = manual_y_pred(combo_probs, n_splits, thresholds)
+        
+        combo_probs = average_probabilities(reconstructed_probs, selected_channel_indices)
+        manual_pred = manual_y_predict(combo_probs, thresholds)
+
+
+        #dont have any channels, is all combined into one
+        score = objective_score(health_state, manual_pred)
+            
+        if score > best_score:
+            best_score = score
+            best_channel_indices = selected_channel_indices
+    return best_score, best_channel_indices

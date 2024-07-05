@@ -115,3 +115,22 @@ def convert_multi_dict_to_array1(params_dict, nan_indices, health_state):
             params_array[:, i] = values
         params_list.append(params_array)
     return params_list, no_features
+
+def reconstruct_probs(probs, test_indices, nan_indices, no_patients, n_splits):
+    reconstructed_probs = np.zeros(no_patients)
+    reconstructed_probs[~nan_indices] = np.nan
+    allowed_indices = np.arange(0, no_patients)[nan_indices]
+
+    for z in range(0, n_splits):
+        for i, indice in enumerate(test_indices[z]):
+            reconstructed_probs[allowed_indices[indice]] = probs[z][i][0]
+            
+
+    return reconstructed_probs
+
+def get_reconstructed_probabilities(probs, test_indices, nan_indices, no_patients, n_splits):
+    reconstructed_probs = []
+    for i in range(0, len(nan_indices)):
+        reconstructed_prob = reconstruct_probs(probs[i], test_indices[i], nan_indices[i], no_patients, n_splits)
+        reconstructed_probs.append(reconstructed_prob)
+    return reconstructed_probs

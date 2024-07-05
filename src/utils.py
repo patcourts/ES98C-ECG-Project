@@ -73,3 +73,45 @@ def get_nan_indices(signals):
 
     nan_indices = np.array(nan_indices)
     return nan_indices
+
+
+def convert_multi_dict_to_array(params, nan_indices, health_state):
+    no_features = len(params)
+    params_list = []
+    for j in range(0, len(nan_indices)):
+        params_array = np.zeros(shape=(len(health_state[nan_indices[j]]), no_features))
+        for i, values in enumerate(params.values()):
+            params_array[:, i] = values[j]
+        params_list.append(params_array)
+    return params_list, no_features
+
+def convert_single_dict_to_array(params, health_state):
+    no_features = len(params)
+    params_array = np.zeros((len(health_state), no_features))
+    for i, values in enumerate(params.values()):
+        params_array[:, i] = values
+    return params_array, no_features
+
+def reduce_parameter_set(params, selected_indices, channel):
+    select_params = {}
+    for i, key in enumerate(params.keys()):
+        if i in selected_indices:
+            select_params[key] = params[key][channel]
+    return select_params
+        
+def reduce_parameter_set_single(params, selected_indices):
+    select_params = {}
+    for i, key in enumerate(params.keys()):
+        if i in selected_indices:
+            select_params[key] = params[key]
+    return select_params
+
+def convert_multi_dict_to_array1(params_dict, nan_indices, health_state):
+    no_features = len(params_dict[0])
+    params_list = []
+    for j in range(0, len(nan_indices)):
+        params_array = np.zeros((len(health_state[nan_indices[j]]), no_features))
+        for i, values in enumerate(params_dict[j].values()):
+            params_array[:, i] = values
+        params_list.append(params_array)
+    return params_list, no_features

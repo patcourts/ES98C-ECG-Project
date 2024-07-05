@@ -226,10 +226,10 @@ def get_frequency_params(signals):
                 ratios.append(ratio)
                 tps.append(tp)
                 
-    lfs_list.append(lfs)
-    hfs_list.append(hfs)
-    ratios_list.append(ratios)
-    tps_list.append(tps)
+        lfs_list.append(lfs)
+        hfs_list.append(hfs)
+        ratios_list.append(ratios)
+        tps_list.append(tps)
 
     return lfs_list, hfs_list, ratios_list, tps_list
 

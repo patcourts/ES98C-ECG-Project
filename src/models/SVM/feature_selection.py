@@ -1,8 +1,8 @@
 from sklearn.feature_selection import SequentialFeatureSelector, SelectKBest, mutual_info_classif #for forward feature selection
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
-from scoring_metrics import scoring_function
-from utils import reduce_parameter_set, reduce_parameter_set_single, convert_single_dict_to_array
+from models.scoring_metrics import scoring_function
+from database.utils import reduce_parameter_set, reduce_parameter_set_single, convert_single_dict_to_array
 
 
 def forward_selection(params, health_state, scorer=scoring_function, k=6):

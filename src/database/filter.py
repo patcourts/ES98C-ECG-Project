@@ -1,4 +1,4 @@
-from patients import Patient, PatientCollection
+from database.patients import Patient, PatientCollection
 import wfdb
 from tqdm import tqdm
 import neurokit2 as nk

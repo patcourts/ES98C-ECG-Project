@@ -1,7 +1,7 @@
 from sklearn.model_selection import train_test_split, GridSearchCV, StratifiedKFold
 from sklearn.svm import SVC
 import numpy as np
-from scoring_metrics import get_balanced_accuracy, objective_score
+from models.scoring_metrics import get_balanced_accuracy, objective_score
 import itertools
 
 def tune_hyperparams(params, health_state, param_grid, scorer='balanced_accuracy'):

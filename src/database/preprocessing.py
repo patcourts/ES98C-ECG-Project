@@ -18,15 +18,11 @@ def butter_bandpass(lowcut, highcut, fs, order=5):
     b, a = butter(order, [low, high], btype='band')
     return b, a
 
-def denoise(signal, butter=False, DWT=False, normalise=False):
+def denoise(signal, method, normalise=False):
     
     sample_freq = 1000
-    
-    if butter and DWT:
-        print('only one filter can be applied to the data')
-        return None
         
-    if butter:
+    if method == 'butterworth':
         cutoff_frequency = 0.5  # Cutoff frequency in Hz (remove frequencies below this)
         b, a = butter_highpass(cutoff_frequency, sample_freq)
         baseline_removed_signal = filtfilt(b, a, signal)
@@ -36,7 +32,7 @@ def denoise(signal, butter=False, DWT=False, normalise=False):
         b, a = butter_bandpass(lowcut, highcut, sample_freq)
         denoised_signal = filtfilt(b, a, baseline_removed_signal)
         
-    elif DWT:
+    elif method == 'DWT':
         coeffs = pywt.wavedec(signal, wavelet='db4')
         set_to_zero = [0, 1, 2, 3, 4]
         level_to_zero = 9
@@ -44,6 +40,10 @@ def denoise(signal, butter=False, DWT=False, normalise=False):
             if i in set_to_zero or i > level_to_zero:
                 coeffs[i] = np.zeros_like(coeffs[i])
         denoised_signal = pywt.waverec(coeffs, wavelet='db4')
+    
+    else:
+        print('Invalid method')
+        return None
         
     if normalise:
         norm_denoised_signal = (denoised_signal - denoised_signal.min())/(denoised_signal.max()-denoised_signal.min())
@@ -51,16 +51,18 @@ def denoise(signal, butter=False, DWT=False, normalise=False):
     return denoised_signal
 
 
-def denoise_signals(signals, DWT_state, butterworth_state, normalise_state):
+def denoise_signals(signals, method, normalise_state):
     #denoising the signals through desired method
-    if DWT_state:
+    if method == 'DWT':
         print('denoising signals through Discrete Wavelet Transform')
-    elif butterworth_state:
+    elif method == 'butterworth':
         print('denoising signals through butterworth filter method')
+    else:
+        print('Invalid method')
     if normalise_state:
         print('normalising signals')
     denoised_signals = np.zeros(shape=(signals.shape))
     for i, signal in enumerate(signals):
         for j in range(0, len(signals[0, :])):
-            denoised_signals[i][j] = denoise(signal[j], DWT=DWT_state, normalise=normalise_state, butter = butterworth_state)
+            denoised_signals[i][j] = denoise(signal[j], method = method, normalise=normalise_state)
     return denoised_signals

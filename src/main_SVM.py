@@ -2,13 +2,13 @@ import wfdb
 import numpy as np
 from tqdm import tqdm
 
-from filter import filter_database
-from preprocessing import denoise_signals
-from utils import get_sig_array_from_patients, get_nan_indices, convert_multi_dict_to_array, convert_multi_dict_to_array1, get_reconstructed_probabilities
-from parameterisation import get_all_params
-from feature_selection import select_features
-from binary_classification import get_best_estimators, get_scores_and_probs, optimise_score_over_channels
-from scoring_metrics import scoring_function, print_scores_for_channel
+from database.filter import filter_database
+from database.preprocessing import denoise_signals
+from database.utils import get_sig_array_from_patients, get_nan_indices, convert_multi_dict_to_array, convert_multi_dict_to_array1, get_reconstructed_probabilities
+from models.SVM.parameterisation import get_all_params
+from models.SVM.feature_selection import select_features
+from models.SVM.binary_classification import get_best_estimators, get_scores_and_probs, optimise_score_over_channels
+from models.scoring_metrics import scoring_function, print_scores_for_channel
 
 #creates a list containing the directories of all the ECGs within the data base
 patients = wfdb.get_record_list('ptbdb') 
@@ -34,7 +34,7 @@ health_state = np.array(allowed_patients.get_diagnoses())
 signals = get_sig_array_from_patients(allowed_patients)
 
 #denoising the signals through desired method
-denoised_signals = denoise_signals(signals, DWT_state = True, butterworth_state = False, normalise_state=True)
+denoised_signals = denoise_signals(signals, method='DWT', normalise_state=True)
 
 #finding signals that have been removed due to poor quality
 nan_indices = get_nan_indices(denoised_signals)

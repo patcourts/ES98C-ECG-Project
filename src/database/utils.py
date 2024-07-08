@@ -1,7 +1,7 @@
 import numpy as np
 from tqdm import tqdm
 import neurokit2 as nk
-from patients import PatientCollection
+from database.patients import PatientCollection
 
 def get_sig_array_from_patients(patients: PatientCollection, invert_signals=False):
     no_patients = patients.count_patients()

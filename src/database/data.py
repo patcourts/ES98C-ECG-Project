@@ -1,7 +1,9 @@
 import numpy as np
 from database.preprocessing import denoise_signals
-from database.utils import get_sig_array_from_patients
+from database.utils import get_sig_array_from_patients, convert_multi_dict_to_array, convert_multi_dict_to_array1
 from sklearn.model_selection import train_test_split
+from models.SVM.parameterisation import get_all_params
+from models.SVM.feature_selection import select_features
 from database.patients import Patient, PatientCollection
 from database.filter import filter_database
 import wfdb
@@ -22,6 +24,11 @@ class Data:
         self.nan_indices = np.ndarray
         self.denoised_signals = np.ndarray
         self.diagnosis_indices = np.ndarray
+        self.health_state = list[str]
+
+        #for parameterisation and selected
+        self.params = dict
+        self.selected_features = np.ndarray
 
         #for use in ML models
         self.train_splits = train_splits
@@ -44,6 +51,11 @@ class Data:
 
     def get_signals(self):
         self.signals = get_sig_array_from_patients(self.allowed_patients)
+        return self.signals
+    
+    def get_health_state(self):
+        self.health_state = np.array(self.allowed_patients.get_diagnoses())
+        return self.health_state
 
     def get_nan_indices(self):
         nan_indices = []
@@ -70,7 +82,27 @@ class Data:
             denoised_signals = denoise_signals(self.signals, method, normalise_state)
             self.denoised_signals = denoised_signals
             return denoised_signals
+        
+    def get_params(self):
+        params = get_all_params(self.denoised_signals, self.allowed_patients, self.nan_indices)
+        self.params = params
+        return params
+    
+    def get_selected_features(self, desired_no_feats = 4):
+        params_array, no_feats = convert_multi_dict_to_array(self.params, self.nan_indices, self.health_state)
 
+        #chosing selected features
+        selected_features = select_features(self.params, params_array, self.health_state, self.nan_indices, desired_no_feats)
+
+        for i in range(0, 6):
+            print(f"Selected features for channel {i+1}:")
+            print(list(selected_features[i].keys()))
+
+        #converting to array for use in ML
+        selected_features_array, no_features = convert_multi_dict_to_array1(selected_features, self.nan_indices, self.health_state)
+
+        self.selected_features = selected_features_array
+        return selected_features_array
 
     def get_multi_labels(self):
         #getting categorical diagnosis for each patient
@@ -104,12 +136,14 @@ class Data:
 
     def get_binary_labels(self):
         self.labels = np.array(self.allowed_patients.get_diagnoses())
+        #need indices
 
-    def set_input_data(self):
+    def set_input_data(self, data):
         input_data = []
         for j in range(0, 6):
-            input_data.append(self.denoised_signals[:, j][self.nan_indices[j]][self.diagnosis_indices[j]])
+            input_data.append(data[:, j][self.nan_indices[j]][self.diagnosis_indices[j]])
         self.input_data = input_data
+    
 
         
     def get_split_data(self, split_percents: dict):
@@ -135,6 +169,7 @@ class Data:
     def run(self):
         self.filter_database()
         self.get_signals()
+        self.get_health_state()
         self.get_nan_indices()
         self.preprocess_signals(method=self.denoise_method, normalise_state=True)
 
@@ -145,9 +180,12 @@ class Data:
         
         if self.parameterisation:
             self.get_params()
+            self.get_selected_features()
+            if self.train_splits is not None:
+                self.set_input_data(self.selected_features)
         else:
-            self.set_input_data()
+            self.set_input_data(self.denoised_signals)
 
-
-        self.get_split_data(self.train_splits)
+        if self.train_splits is not None:
+            self.get_split_data(self.train_splits)
 

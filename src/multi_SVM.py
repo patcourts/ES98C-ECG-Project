@@ -23,8 +23,9 @@ param_grid = {
 #define multi classifier
 ovo_svm = OneVsOneClassifier(SVC(class_weight = 'balanced', probability=True))
 
+
 #find the best set of hyperparameters for each channel, tuned on the desired scoring function
-best_estimators = get_best_estimators(ptb_multi_SVM.input_data, param_grid, scoring_function, ovo_svm, ptb_multi_SVM.health_state, ptb_multi_SVM.nan_indices)
+best_estimators = get_best_estimators(ptb_multi_SVM.input_data, param_grid, 'balanced_accuracy', ovo_svm, ptb_multi_SVM.health_state, ptb_multi_SVM.nan_indices, labels = ptb_multi_SVM.labels)
 
 
 #perform 3 way skfold to test accuracy
@@ -42,6 +43,4 @@ for i in range(0, 6):
     av_balanced_accuracy.append(np.mean(balanced_accuracy))
 
 #printing scores for each channel
-print_scores_for_channel(av_balanced_accuracy)
-
-#need to fix this shouldnt have broken anything else
+print_scores_for_channel(av_balanced_accuracy, av_balanced_accuracy)#fix this later

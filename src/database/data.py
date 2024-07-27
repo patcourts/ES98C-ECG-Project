@@ -4,7 +4,7 @@ from database.utils import get_sig_array_from_patients, convert_multi_dict_to_ar
 from sklearn.model_selection import train_test_split
 from models.SVM.parameterisation import get_all_params
 from models.SVM.feature_selection import select_features
-from database.patients import Patient, PatientCollection
+from database.patients import PatientCollection
 from database.filter import filter_database
 import wfdb
 
@@ -23,7 +23,7 @@ class Data:
         self.signals = np.ndarray
         self.nan_indices = np.ndarray
         self.denoised_signals = np.ndarray
-        self.diagnosis_indices = np.ndarray
+        self.diagnosis_indices = None
         self.health_state = list[str]
 
         #for parameterisation and selected
@@ -138,12 +138,30 @@ class Data:
         self.labels = np.array(self.allowed_patients.get_diagnoses())
         #need indices
 
-    def set_input_data(self, data):
+    def set_input_data_signal(self, data):
         input_data = []
-        for j in range(0, 6):
-            input_data.append(data[:, j][self.nan_indices[j]][self.diagnosis_indices[j]])
-        self.input_data = input_data
-    
+        if self.diagnosis_indices is not None:
+            for j in range(0, 6):
+                input_data.append(data[:, j][self.nan_indices[j]][self.diagnosis_indices[j]])
+            self.input_data = input_data
+
+        else:
+            for j in range(0, 6):
+                input_data.append(data[:, j][self.nan_indices[j]])
+            self.input_data = input_data
+
+    def set_input_data_param(self, data):
+        input_data = []
+        
+        if self.diagnosis_indices is not None:
+            for j in range(0, 6):
+                input_data.append(data[j][self.diagnosis_indices[j]])
+            self.input_data = input_data
+
+        else:
+            for j in range(0, 6):
+                input_data.append(data[j])
+            self.input_data = input_data
 
         
     def get_split_data(self, split_percents: dict):
@@ -181,10 +199,9 @@ class Data:
         if self.parameterisation:
             self.get_params()
             self.get_selected_features()
-            if self.train_splits is not None:
-                self.set_input_data(self.selected_features)
+            self.set_input_data_param(self.selected_features)
         else:
-            self.set_input_data(self.denoised_signals)
+            self.set_input_data_signal(self.denoised_signals)
 
         if self.train_splits is not None:
             self.get_split_data(self.train_splits)

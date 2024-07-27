@@ -1,27 +1,23 @@
 from sklearn.model_selection import train_test_split, GridSearchCV, StratifiedKFold
-from sklearn.svm import SVC
 import numpy as np
 from models.scoring_metrics import get_balanced_accuracy, objective_score
 import itertools
 
-def tune_hyperparams(params, health_state, param_grid, scorer='balanced_accuracy'):
+def tune_hyperparams(params, health_state, param_grid, classifier, scorer='balanced_accuracy', ):
     
     X_train, X_test, y_train, y_test = train_test_split(params, health_state, test_size=0.3, stratify=health_state)
-    
-    #initialise classifier
-    svc = SVC(class_weight='balanced', probability = True)
 
     # perform grid search
-    grid_search = GridSearchCV(svc, param_grid, cv=3, scoring=scorer)
+    grid_search = GridSearchCV(classifier, param_grid, cv=3, scoring=scorer)
     
     grid_search.fit(X_train, y_train)
     
     return grid_search.best_estimator_
 
-def get_best_estimators(params, param_grid, scoring_function, health_state, nan_indices):
+def get_best_estimators(params, param_grid, scoring_function, classifier, health_state, nan_indices):
     best_estimators = []
     for i in range(0, len(nan_indices)):
-        best_estimators.append(tune_hyperparams(params[i], health_state[nan_indices[i]], param_grid, scoring_function))
+        best_estimators.append(tune_hyperparams(params[i], health_state[nan_indices[i]], param_grid, classifier, scoring_function))
     return best_estimators
 
 def skfold_with_probabilities(params, health_state, n_splits, best_estimator, scorer):

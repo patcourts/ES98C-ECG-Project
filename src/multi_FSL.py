@@ -1,10 +1,6 @@
 # FSL model
 
 from database.data import Data
-from database.filter import filter_database
-import wfdb
-import numpy as np
-from database.utils import get_sig_array_from_patients
 
 train_splits = {}
 train_splits['train'] = 0.7

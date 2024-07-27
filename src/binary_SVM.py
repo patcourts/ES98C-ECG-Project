@@ -1,14 +1,8 @@
-import wfdb
-import numpy as np
-
-
 from database.utils import get_reconstructed_probabilities
 from models.SVM.binary_classification import get_best_estimators, get_scores_and_probs, optimise_score_over_channels
 from models.scoring_metrics import scoring_function, print_scores_for_channel
 from database.data import Data
-
-#creates a list containing the directories of all the ECGs within the data base
-patients = wfdb.get_record_list('ptbdb') 
+from sklearn.svm import SVC
 
 #creating DATA object
 ptb_binary_SVM = Data(database = 'ptbdb', denoise_method='DWT', train_splits=None, binary = True, parameterisation = True)
@@ -22,8 +16,11 @@ param_grid = {
     'gamma': ['scale']#including 'auto' aswell takes forever
 }
 
+#define classifier
+svc = SVC(class_weight='balanced', probability = True)
+
 #find the best set of hyperparameters for each channel, tuned on the desired scoring function
-best_estimators = get_best_estimators(ptb_binary_SVM.selected_features, param_grid, scoring_function, ptb_binary_SVM.health_state, ptb_binary_SVM.nan_indices)
+best_estimators = get_best_estimators(ptb_binary_SVM.selected_features, param_grid, scoring_function, svc, ptb_binary_SVM.health_state, ptb_binary_SVM.nan_indices)
 
 #perform 3 way skfold to get scores for each channel as well as their probabilities
 n_splits = 3

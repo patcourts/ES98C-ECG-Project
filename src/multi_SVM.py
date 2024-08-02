@@ -9,7 +9,7 @@ import numpy as np
 
 
 #creating DATA object
-ptb_multi_SVM = Data(database = 'ptbdb', denoise_method='DWT', train_splits=None, binary = False, parameterisation = True)
+ptb_multi_SVM = Data(database = 'ptbdb', denoise_method='DWT', train_splits=None, binary = False, parameterisation = True, estimation_method='SVM')
 
 ptb_multi_SVM.run()
 

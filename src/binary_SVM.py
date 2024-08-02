@@ -6,7 +6,7 @@ from sklearn.svm import SVC
 from tqdm import tqdm
 
 #creating DATA object
-ptb_binary_SVM = Data(database = 'ptbdb', denoise_method='DWT', train_splits=None, binary = True, parameterisation = True)
+ptb_binary_SVM = Data(database = 'ptbdb', denoise_method='DWT', estimation_method = 'SVM', train_splits=None, binary = True, parameterisation = True)
 
 
 

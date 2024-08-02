@@ -11,14 +11,15 @@ import wfdb
 
 class Data:
 
-    def __init__(self, database: str, denoise_method: str, train_splits: dict, binary: bool, parameterisation: bool):
+    def __init__(self, database: str, denoise_method: str, estimation_method: str, train_splits: dict, binary: bool, parameterisation: bool):
         #determining methods to be used
         self.patients = wfdb.get_record_list(database)
         self.denoise_method = denoise_method
         self.binary = binary
         self.parameterisation = parameterisation
+        self.estimation_method = estimation_method
 
-        #for managig and processing database
+        #for managing and processing database
         self.allowed_patients = PatientCollection
         self.signals = np.ndarray
         self.nan_indices = np.ndarray
@@ -92,7 +93,7 @@ class Data:
         params_array, no_feats = convert_multi_dict_to_array(self.params, self.nan_indices, self.health_state)
 
         #chosing selected features
-        selected_features = select_features(self.params, params_array, self.health_state, self.nan_indices, desired_no_feats)
+        selected_features = select_features(self.params, params_array, self.health_state, self.nan_indices, desired_no_feats, self.estimation_method)
 
         for i in range(0, 6):
             print(f"Selected features for channel {i+1}:")

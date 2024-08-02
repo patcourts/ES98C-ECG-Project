@@ -1,18 +1,25 @@
 from sklearn.feature_selection import SequentialFeatureSelector, SelectKBest, mutual_info_classif #for forward feature selection
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
 from models.scoring_metrics import scoring_function
 from database.utils import reduce_parameter_set, reduce_parameter_set_single, convert_single_dict_to_array
 
 
-def forward_selection(params, health_state, scorer=scoring_function, k=6):
+def forward_selection(params, health_state, method, scorer=scoring_function, k=6):
     
     X_train, X_test, y_train, y_test = train_test_split(params, health_state, test_size=0.3, stratify = health_state)
 
-    #initialise svc
-    svm = SVC(class_weight='balanced')
+    #initialising estimation method
+    if method == 'RF':
+        estimator = RandomForestClassifier(class_weight='balanced')
+    elif method == 'SVM':
+        estimator = SVC(class_weight='balanced')
+    elif method == 'KNN':
+        estimator = KNeighborsClassifier()
 
-    SFS_forward = SequentialFeatureSelector(estimator=svm, scoring=scoring_function, cv=3, n_features_to_select=k)
+    SFS_forward = SequentialFeatureSelector(estimator=estimator, scoring=scoring_function, cv=3, n_features_to_select=k)
 
     SFS_forward.fit(X_train, y_train)
 
@@ -34,7 +41,7 @@ def filter_method(params, health_state, k=6, scorer=mutual_info_classif):
     return selected_indices
 
 
-def select_features(params, params_array, health_state, nan_indices, desired_no_feats):
+def select_features(params, params_array, health_state, nan_indices, desired_no_feats, method):
     selected_params = {}
     print(f'selecting {desired_no_feats} most important features')
     for i in range(0, len(nan_indices)):
@@ -49,7 +56,7 @@ def select_features(params, params_array, health_state, nan_indices, desired_no_
         reduced_params_array, no_features = convert_single_dict_to_array(reduced_params, health_state[nan_indices[i]])
 
         #find 4 best features through sfs
-        chosen_indices_filt_sfs = forward_selection(reduced_params_array, health_state[nan_indices[i]], scorer=scoring_function, k=desired_no_feats)
+        chosen_indices_filt_sfs = forward_selection(reduced_params_array, health_state[nan_indices[i]], method, scorer=scoring_function, k=desired_no_feats)
 
         selected_params[i] = reduce_parameter_set_single(reduced_params, chosen_indices_filt_sfs)
 

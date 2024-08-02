@@ -3,11 +3,12 @@ from models.SVM.binary_classification import get_best_estimators, get_scores_and
 from models.scoring_metrics import scoring_function, print_scores_for_channel
 from database.data import Data
 from sklearn.svm import SVC
+from tqdm import tqdm
 
 #creating DATA object
 ptb_binary_SVM = Data(database = 'ptbdb', denoise_method='DWT', train_splits=None, binary = True, parameterisation = True)
 
-ptb_binary_SVM.run()
+
 
 # define hyperparameter grid to test
 param_grid = {
@@ -15,6 +16,9 @@ param_grid = {
     'kernel': ['linear', 'rbf', 'poly'],
     'gamma': ['scale']#including 'auto' aswell takes forever
 }
+
+
+ptb_binary_SVM.run()
 
 #define classifier
 svc = SVC(class_weight='balanced', probability = True)
@@ -36,3 +40,6 @@ reconstructed_probs = get_reconstructed_probabilities(probabilities, test_indice
 best_score, best_channel_indices = optimise_score_over_channels(reconstructed_probs, thresholds, ptb_binary_SVM.health_state)
 
 print(best_score, best_channel_indices)
+
+
+

@@ -136,7 +136,10 @@ class Data:
 
 
     def get_binary_labels(self):
-        self.labels = np.array(self.allowed_patients.get_diagnoses())
+        labels_list = []
+        for i in range(0, 6):
+            labels_list.append(np.array(self.allowed_patients.get_diagnoses())[self.nan_indices[i]])
+        self.labels = labels_list
         #need indices
 
     def set_input_data_signal(self, data):
@@ -174,9 +177,11 @@ class Data:
             print('percentages dont total 1')
             return None
         else:
+            print('splitting data into test and train')
+            
             for i in range(0, 6):
                 split_data = {}
-                X_train, X_test, y_train, y_test = train_test_split(self.input_data[i], self.labels[i], test_size=test_split)
+                X_train, X_test, y_train, y_test = train_test_split(self.input_data[i], self.labels[i], test_size=test_split, stratify=self.labels[i])
                 split_data['X_train'] = X_train
                 split_data['X_test'] = X_test
                 split_data['y_train'] = y_train
@@ -190,7 +195,10 @@ class Data:
         self.get_signals()
         self.get_health_state()
         self.get_nan_indices()
-        self.preprocess_signals(method=self.denoise_method, normalise_state=True)
+        if self.denoise_method is not None:
+            self.preprocess_signals(method=self.denoise_method, normalise_state=True)
+        else:
+            self.denoised_signals = self.signals
 
         if self.binary:
             self.get_binary_labels()

@@ -3,6 +3,24 @@ from sklearn.metrics import confusion_matrix
 
 import pandas as pd
 
+def get_accuracy(y_test, y_pred):
+    """
+    Calculate the accuracy.
+
+    Parameters:
+    y_test (list or array): True labels.
+    y_pred (list or array): Predicted labels.
+
+    Returns:
+    float: Accuracy score.
+    """
+    # count the number of correct predictions (TP + TN)
+    correct_predictions = np.sum(np.array(y_test) == np.array(y_pred))
+    
+    # divide by total datapoints (TP + TN + FN + FP)
+    accuracy = correct_predictions / len(y_test)
+    
+    return accuracy
 
 
 def get_balanced_accuracy(y_test, y_pred):
@@ -36,7 +54,28 @@ def get_specificity(y_test, y_pred):
             false_positive += 1
     
     return true_negative / (true_negative+false_positive)
-            
+
+def get_precision(y_test, y_pred):
+    true_positive = 0
+    false_positive = 0
+    for i in range(0, len(y_test)):
+        if y_pred[i] == y_test[i] == 'Unhealthy':
+            true_positive += 1
+        elif y_pred[i] != y_test[i] and y_test[i] == 'Healthy':
+            false_positive += 1
+    return true_positive/(true_positive + false_positive)
+
+def get_recall(y_test, y_pred):
+    false_negative = 0
+    true_positive = 0
+    for i in range(0, len(y_test)):
+        if y_pred[i] == y_test[i] == 'Unhealthy':
+            true_positive += 1
+        elif y_pred[i] != y_test[i] and y_test[i] == 'Unhealthy':
+            false_negative += 1
+    return true_positive/(true_positive + false_negative)
+
+
 def get_f1_score(y_test, y_pred):
     """
     balance between precision and recall
@@ -84,22 +123,47 @@ def get_av_confusion_matrix(y_test, y_pred):
         av_confusion_mat[i] = confusion_matrix(y_test[i], y_pred[i])
     return np.mean(av_confusion_mat, axis=0)
 
-def print_scores_for_channel(score_accuracy, balanced_accuracy):
+def print_scores_for_channel(all_scores):
+    """
+    Prints score metrics for each channel.
+    
+    Parameters:
+    all_scores (dict): A dictionary where the key is the channel number and the value is another dictionary
+                       containing various score metrics.
+    """
 
-    #presenting results as pandas df
-    data = {
-        'Success Metric': ['Objective Score', 'Balanced Accuracy'],
-        'Channel 1': [f'{score_accuracy[0]}', f'{balanced_accuracy[0]}'],
-        'Channel 2': [f'{score_accuracy[1]}', f'{balanced_accuracy[1]}'],
-        'Channel 3': [f'{score_accuracy[2]}', f'{balanced_accuracy[2]}'],
-        'Channel 4': [f'{score_accuracy[3]}', f'{balanced_accuracy[3]}'],
-        'Channel 5': [f'{score_accuracy[4]}', f'{balanced_accuracy[4]}'],
-        'Channel 6': [f'{score_accuracy[5]}', f'{balanced_accuracy[5]}'],
-        
-    }
+    # Extract the score metrics from the first channel
+    channels = all_scores.keys()
+    score_metrics = list(next(iter(all_scores.values())).keys())
 
+    # Constructing the data dictionary dynamically
+    data = {'Success Metric': score_metrics}
+
+    for channel in channels:
+        channel_key = f'Channel {channel}'
+        channel_scores = [f"{all_scores[channel][metric]}" for metric in score_metrics]
+        data[channel_key] = channel_scores
+
+    # Creating and displaying the DataFrame
     df = pd.DataFrame(data)
     print(df)
 
     return None
+
+    # #presenting results as pandas df
+    # data = {
+    #     'Success Metric': ['Objective Score', 'Balanced Accuracy'],
+    #     'Channel 1': [f'{scores[0]['objective score']}', f'{scores[0]['balanced_accuracy']}],
+    #     'Channel 2': [f'{score_accuracy[1]}', f'{balanced_accuracy[1]}'],
+    #     'Channel 3': [f'{score_accuracy[2]}', f'{balanced_accuracy[2]}'],
+    #     'Channel 4': [f'{score_accuracy[3]}', f'{balanced_accuracy[3]}'],
+    #     'Channel 5': [f'{score_accuracy[4]}', f'{balanced_accuracy[4]}'],
+    #     'Channel 6': [f'{score_accuracy[5]}', f'{balanced_accuracy[5]}'],
+        
+    # }
+
+    # df = pd.DataFrame(data)
+    # print(df)
+
+    # return None
 

@@ -1,6 +1,6 @@
 from sklearn.model_selection import train_test_split, GridSearchCV, StratifiedKFold
 import numpy as np
-from models.scoring_metrics import get_balanced_accuracy, objective_score
+from models.scoring_metrics import get_balanced_accuracy, objective_score, get_f1_score, get_accuracy, get_precision, get_recall
 import itertools
 
 def tune_hyperparams(params, health_state, param_grid, classifier, scorer='balanced_accuracy'):
@@ -33,6 +33,10 @@ def skfold_with_probabilities(params, health_state, n_splits, best_estimator, sc
     balanced_accuracy = []
     score_func = []
     test_indices = []
+    f1_score = []
+    accuracy = []
+    precision = []
+    recall = []
     for train_index, test_index in skf.split(params, health_state):
         #getting test and train data sets
         X_train, X_test = params[train_index], params[test_index]
@@ -49,6 +53,10 @@ def skfold_with_probabilities(params, health_state, n_splits, best_estimator, sc
         y_pred = best_estimator.predict(X_test)
         score_func.append(scorer(best_estimator, X_train, y_test))
         balanced_accuracy.append(get_balanced_accuracy(y_test, y_pred))
+        f1_score.append(get_f1_score(y_test, y_pred))
+        accuracy.append(get_accuracy(y_test, y_pred))
+        precision.append(get_precision(y_test, y_pred))
+        recall.append(get_recall(y_test, y_pred))
         
         #for evaluation of model later
         probabilities.append(best_estimator.predict_proba(X_test))
@@ -57,11 +65,18 @@ def skfold_with_probabilities(params, health_state, n_splits, best_estimator, sc
         #for reconstruction of full patient data
         test_indices.append(test_index)
 
-    return np.mean(np.array(score_func)), np.mean(np.array(balanced_accuracy)), probabilities, sample_percentages, y_tests, test_indices
+    #creating score metric dictionary
+    all_scores = {}
+    all_scores['F1 score'] = np.mean(np.array(f1_score))
+    all_scores['Objective score'] = np.mean(np.array(score_func))
+    all_scores['Bal Acc'] = np.mean(np.array(balanced_accuracy))
+    all_scores['Accuracy'] = np.mean(np.array(accuracy))
+    all_scores['precision'] = np.mean(np.array(precision))
+    all_scores['recall'] = np.mean(np.array(recall))
+
+    return all_scores, probabilities, sample_percentages, y_tests, test_indices
 
 def get_scores_and_probs(params, health_state, nan_indices, best_estimators, scoring_function, n_splits=3):
-    score_accuracy = []
-    balanced_accuracy = []
     n_splits=n_splits
 
     probs = []
@@ -69,16 +84,18 @@ def get_scores_and_probs(params, health_state, nan_indices, best_estimators, sco
     y_tests = []
     test_indices = []
 
+    all_channel_all_scores = {}
+
     for i in range(0, len(nan_indices)):
-        score_acc, bal_acc, prob, threshold, y_test, test_indice = skfold_with_probabilities(params[i], health_state[nan_indices[i]], n_splits, best_estimators[i], scoring_function)
-        score_accuracy.append(score_acc)
-        balanced_accuracy.append(bal_acc)
+        scores, prob, threshold, y_test, test_indice = skfold_with_probabilities(params[i], health_state[nan_indices[i]], n_splits, best_estimators[i], scoring_function)
+
+        all_channel_all_scores[i] = scores
         probs.append(prob)
         thresholds.append(threshold)
         y_tests.append(y_test)
         test_indices.append(test_indice)
     
-    return score_accuracy, balanced_accuracy, probs, thresholds, y_tests, test_indices
+    return all_channel_all_scores, probs, thresholds, y_tests, test_indices
 
 def average_probabilities(probs, channels):
     average_probs = []

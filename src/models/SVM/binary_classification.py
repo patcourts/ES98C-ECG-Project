@@ -107,9 +107,9 @@ def average_probabilities(probs, channels):
 def manual_y_predict(average_probs, threshold):#change this back to threshold and see if better??
     manual_y_pred = np.empty(len(average_probs), dtype=object)
     for j in range(0, len(average_probs)):
-        if average_probs[j] > 0.3:
+        if average_probs[j] > threshold:
             manual_y_pred[j] = 'Healthy'
-        elif average_probs[j] <= 0.3:
+        elif average_probs[j] <= threshold:
             manual_y_pred[j] = 'Unhealthy'
         elif average_probs[j] is None:
             manual_y_pred[j] = np.nan

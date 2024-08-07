@@ -29,6 +29,7 @@ def get_balanced_accuracy(y_test, y_pred):
     """
     num_healthy_true = np.sum([x=='Healthy' for x in y_test])
     num_unhealthy_true = len(y_test) - num_healthy_true
+
     count_healthy_accurate = 0
     count_unhealthy_accurate = 0
     for i in range(0, len(y_test)):
@@ -36,6 +37,7 @@ def get_balanced_accuracy(y_test, y_pred):
             count_unhealthy_accurate +=1
         elif y_pred[i] == y_test[i] == 'Healthy':
             count_healthy_accurate +=1
+
     healthy_percentage = count_healthy_accurate/num_healthy_true
     unhealthy_percentage = count_unhealthy_accurate/num_unhealthy_true
     balanced_accuracy = (healthy_percentage + unhealthy_percentage) * 0.5
@@ -48,9 +50,9 @@ def get_specificity(y_test, y_pred):
     true_negative = 0
     false_positive = 0
     for i in range(0, len(y_test)):
-        if y_pred[i] == y_test[i] == 'Healthy':
+        if y_pred[i] == y_test[i] == 'Unhealthy':
             true_negative += 1
-        elif y_pred[i] != y_test[i] and y_test[i] == 'Healthy':
+        elif y_pred[i] != y_test[i] and y_test[i] == 'Unhealthy':
             false_positive += 1
     
     return true_negative / (true_negative+false_positive)
@@ -59,9 +61,9 @@ def get_precision(y_test, y_pred):
     true_positive = 0
     false_positive = 0
     for i in range(0, len(y_test)):
-        if y_pred[i] == y_test[i] == 'Unhealthy':
+        if y_pred[i] == y_test[i] == 'Healthy':
             true_positive += 1
-        elif y_pred[i] != y_test[i] and y_test[i] == 'Healthy':
+        elif y_pred[i] != y_test[i] and y_test[i] == 'Unhealthy':
             false_positive += 1
     return true_positive/(true_positive + false_positive)
 
@@ -69,9 +71,9 @@ def get_recall(y_test, y_pred):
     false_negative = 0
     true_positive = 0
     for i in range(0, len(y_test)):
-        if y_pred[i] == y_test[i] == 'Unhealthy':
+        if y_pred[i] == y_test[i] == 'Healthy':
             true_positive += 1
-        elif y_pred[i] != y_test[i] and y_test[i] == 'Unhealthy':
+        elif y_pred[i] != y_test[i] and y_test[i] == 'Healthy':
             false_negative += 1
     return true_positive/(true_positive + false_negative)
 
@@ -84,11 +86,11 @@ def get_f1_score(y_test, y_pred):
     false_positive = 0
     false_negative = 0
     for i in range(0, len(y_test)):
-        if y_pred[i] == y_test[i] == 'Unhealthy':
+        if y_pred[i] == y_test[i] == 'Healthy':
             true_positive += 1
-        elif y_pred[i] != y_test[i] and y_test[i] == 'Healthy':
-            false_positive += 1
         elif y_pred[i] != y_test[i] and y_test[i] == 'Unhealthy':
+            false_positive += 1
+        elif y_pred[i] != y_test[i] and y_test[i] == 'Healthy':
             false_negative += 1
     return (2*true_positive)/(2*true_positive+false_positive+false_negative)
 
@@ -150,20 +152,14 @@ def print_scores_for_channel(all_scores):
 
     return None
 
-    # #presenting results as pandas df
-    # data = {
-    #     'Success Metric': ['Objective Score', 'Balanced Accuracy'],
-    #     'Channel 1': [f'{scores[0]['objective score']}', f'{scores[0]['balanced_accuracy']}],
-    #     'Channel 2': [f'{score_accuracy[1]}', f'{balanced_accuracy[1]}'],
-    #     'Channel 3': [f'{score_accuracy[2]}', f'{balanced_accuracy[2]}'],
-    #     'Channel 4': [f'{score_accuracy[3]}', f'{balanced_accuracy[3]}'],
-    #     'Channel 5': [f'{score_accuracy[4]}', f'{balanced_accuracy[4]}'],
-    #     'Channel 6': [f'{score_accuracy[5]}', f'{balanced_accuracy[5]}'],
-        
-    # }
 
-    # df = pd.DataFrame(data)
-    # print(df)
+def get_all_metrics(y_test, y_pred):
+    metrics = {}
+    metrics['bal acc'] = get_balanced_accuracy(y_test, y_pred)
+    metrics['accuracy'] = get_accuracy(y_test, y_pred)
+    metrics['f1'] = get_f1_score(y_test, y_pred)
+    metrics['obj score'] = objective_score(y_test, y_pred)
+    metrics['recall'] = get_recall(y_test, y_pred)
+    metrics['precision'] = get_precision(y_test, y_pred)
 
-    # return None
-
+    return metrics

@@ -27,15 +27,20 @@ def get_balanced_accuracy(y_test, y_pred):
     """
     balanced accuracy....
     """
-    num_healthy_true = np.sum([x=='Healthy' for x in y_test])
+    #checking if integers in list or strings
+    if y_test[0] == 1 or y_test[0] == 0:
+        num_healthy_true = np.sum(y_test)
+    else:
+        num_healthy_true = np.sum([x=='Healthy' for x in y_test])
+
     num_unhealthy_true = len(y_test) - num_healthy_true
 
     count_healthy_accurate = 0
     count_unhealthy_accurate = 0
     for i in range(0, len(y_test)):
-        if y_pred[i] == y_test[i] == 'Unhealthy':
+        if (y_pred[i] == y_test[i] == 'Unhealthy') or (y_pred[i] == y_test[i] == 0):
             count_unhealthy_accurate +=1
-        elif y_pred[i] == y_test[i] == 'Healthy':
+        elif (y_pred[i] == y_test[i] == 'Healthy') or (y_pred[i] == y_test[i] == 1):
             count_healthy_accurate +=1
 
     healthy_percentage = count_healthy_accurate/num_healthy_true
@@ -50,9 +55,9 @@ def get_specificity(y_test, y_pred):
     true_negative = 0
     false_positive = 0
     for i in range(0, len(y_test)):
-        if y_pred[i] == y_test[i] == 'Unhealthy':
+        if (y_pred[i] == y_test[i] == 'Unhealthy') or (y_pred[i] == y_test[i] == 0):
             true_negative += 1
-        elif y_pred[i] != y_test[i] and y_test[i] == 'Unhealthy':
+        elif y_pred[i] != y_test[i] and ((y_test[i] == 'Unhealthy') or (y_test[i] == 0)):
             false_positive += 1
     
     return true_negative / (true_negative+false_positive)
@@ -61,9 +66,9 @@ def get_precision(y_test, y_pred):
     true_positive = 0
     false_positive = 0
     for i in range(0, len(y_test)):
-        if y_pred[i] == y_test[i] == 'Healthy':
+        if (y_pred[i] == y_test[i] == 'Healthy') or (y_pred[i] == y_test[i] == 1):
             true_positive += 1
-        elif y_pred[i] != y_test[i] and y_test[i] == 'Unhealthy':
+        elif y_pred[i] != y_test[i] and ((y_test[i] == 'Unhealthy') or (y_test[i] == 0)):
             false_positive += 1
     return true_positive/(true_positive + false_positive)
 
@@ -71,9 +76,9 @@ def get_recall(y_test, y_pred):
     false_negative = 0
     true_positive = 0
     for i in range(0, len(y_test)):
-        if y_pred[i] == y_test[i] == 'Healthy':
+        if (y_pred[i] == y_test[i] == 'Healthy') or (y_pred[i] == y_test[i] == 1):
             true_positive += 1
-        elif y_pred[i] != y_test[i] and y_test[i] == 'Healthy':
+        elif y_pred[i] != y_test[i] and ((y_test[i] == 'Healthy') or (y_test[i] == 1)):
             false_negative += 1
     return true_positive/(true_positive + false_negative)
 
@@ -86,11 +91,11 @@ def get_f1_score(y_test, y_pred):
     false_positive = 0
     false_negative = 0
     for i in range(0, len(y_test)):
-        if y_pred[i] == y_test[i] == 'Healthy':
+        if (y_pred[i] == y_test[i] == 'Healthy') or (y_pred[i] == y_test[i] == 1):
             true_positive += 1
-        elif y_pred[i] != y_test[i] and y_test[i] == 'Unhealthy':
+        elif y_pred[i] != y_test[i] and ((y_test[i] == 'Unhealthy') or (y_test[i] == 0)) :
             false_positive += 1
-        elif y_pred[i] != y_test[i] and y_test[i] == 'Healthy':
+        elif y_pred[i] != y_test[i] and ((y_test[i] == 'Healthy') or (y_test[i] == 1)):
             false_negative += 1
     return (2*true_positive)/(2*true_positive+false_positive+false_negative)
 

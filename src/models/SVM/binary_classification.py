@@ -1,11 +1,11 @@
 from sklearn.model_selection import train_test_split, GridSearchCV, StratifiedKFold
 import numpy as np
-from models.scoring_metrics import get_balanced_accuracy, objective_score, get_f1_score, get_accuracy, get_precision, get_recall
+from models.scoring_metrics import get_all_metrics, get_f1_score
 import itertools
 
-def tune_hyperparams(params, health_state, param_grid, classifier, scorer='balanced_accuracy'):
+def tune_hyperparams(params, labels, param_grid, classifier, scorer='balanced_accuracy'):
     
-    X_train, X_test, y_train, y_test = train_test_split(params, health_state, test_size=0.3, stratify=health_state)
+    X_train, X_test, y_train, y_test = train_test_split(params, labels, test_size=0.3, stratify=labels)
 
     # perform grid search
     grid_search = GridSearchCV(classifier, param_grid, cv=3, scoring=scorer)
@@ -23,58 +23,74 @@ def get_best_estimators(params, param_grid, scoring_function, classifier, health
             best_estimators.append(tune_hyperparams(params[i], labels[i], param_grid, classifier, scoring_function))
     return best_estimators
 
-def skfold_with_probabilities(params, health_state, n_splits, best_estimator, scorer):
+def perform_skfold(params, health_state, n_splits, best_estimator, get_probabilities = False):
     
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42) #can do repeated skf for better validation
     
     probabilities = []
     sample_percentages = []
     y_tests = []
-    balanced_accuracy = []
-    score_func = []
-    test_indices = []
-    f1_score = []
     accuracy = []
+    bal_acc = []
     precision = []
     recall = []
+    f1 = []
+    obj_score = []
+    test_indices = []
+
     for train_index, test_index in skf.split(params, health_state):
+        
         #getting test and train data sets
         X_train, X_test = params[train_index], params[test_index]
         y_train, y_test = health_state[train_index], health_state[test_index]
         
         
-        #calculating percentage of healthy in training data
-        sample_percentages.append(np.mean(y_train == 'Healthy')) #how is threshold measured??? health_state[train_index]??
-        
+
         #fitting data on previously calculated best estimator
         best_estimator.fit(X_train, y_train)
         
-        #evaluating model
-        y_pred = best_estimator.predict(X_test)
-        score_func.append(scorer(best_estimator, X_train, y_test))
-        balanced_accuracy.append(get_balanced_accuracy(y_test, y_pred))
-        f1_score.append(get_f1_score(y_test, y_pred))
-        accuracy.append(get_accuracy(y_test, y_pred))
-        precision.append(get_precision(y_test, y_pred))
-        recall.append(get_recall(y_test, y_pred))
+        #calculating percentage of healthy in training data
+        threshold = sum(y_train)/len(y_train)
+
+        #manual predictions with probabilities
+        y_probs = best_estimator.predict_proba(X_test)
+        y_pred = (y_probs[:, 1] > threshold).astype(int)
+        
+
+        score_metrics = get_all_metrics(y_test, y_pred)
+
+        f1.append(score_metrics['f1'])
+        recall.append(score_metrics['recall'])
+        accuracy.append(score_metrics['accuracy'])
+        bal_acc.append(score_metrics['bal acc'])
+        precision.append(score_metrics['precision'])
+        obj_score.append(score_metrics['obj score'])
+
+
         
         #for evaluation of model later
-        probabilities.append(best_estimator.predict_proba(X_test))
+        sample_percentages.append(threshold) 
+        probabilities.append(y_probs)
         y_tests.append(y_test)
         
         #for reconstruction of full patient data
         test_indices.append(test_index)
 
     #creating score metric dictionary
-    all_scores = {}
-    all_scores['F1 score'] = np.mean(np.array(f1_score))
-    all_scores['Objective score'] = np.mean(np.array(score_func))
-    all_scores['Bal Acc'] = np.mean(np.array(balanced_accuracy))
-    all_scores['Accuracy'] = np.mean(np.array(accuracy))
-    all_scores['precision'] = np.mean(np.array(precision))
-    all_scores['recall'] = np.mean(np.array(recall))
+    all_average_scores = {}
+    all_average_scores['F1 score'] = np.mean(np.array(f1))
+    all_average_scores['Objective score'] = np.mean(np.array(obj_score))
+    all_average_scores['Bal Acc'] = np.mean(np.array(bal_acc))
+    all_average_scores['Accuracy'] = np.mean(np.array(accuracy))
+    all_average_scores['precision'] = np.mean(np.array(precision))
+    all_average_scores['recall'] = np.mean(np.array(recall))
 
-    return all_scores, probabilities, sample_percentages, y_tests, test_indices
+    if get_probabilities:
+
+        return all_average_scores, sample_percentages, probabilities, y_tests, test_indices
+    else:
+        return all_average_scores
+
 
 def get_scores_and_probs(params, health_state, nan_indices, best_estimators, scoring_function, n_splits=3):
     n_splits=n_splits
@@ -115,7 +131,7 @@ def manual_y_predict(average_probs, threshold):#change this back to threshold an
             manual_y_pred[j] = np.nan
     return manual_y_pred
 
-def optimise_score_over_channels(reconstructed_probs, thresholds, health_state):
+def optimise_score_over_channels(reconstructed_probs, threshold, health_state):
     #calculate all possible combinations of channel indices
     channel_indices_list = [0, 1, 2, 3, 4, 5]
     all_combinations = []
@@ -129,18 +145,14 @@ def optimise_score_over_channels(reconstructed_probs, thresholds, health_state):
         
         # Use combo to get channel indices
         selected_channel_indices = [channel_indices_list[i] for i in combo]
-        
-        #print(selected_channel_indices)
-        #no longer have any splits
-        #combo_probs = average_probabilities(probs, n_splits, selected_channel_indices)
-        #manual_pred = manual_y_pred(combo_probs, n_splits, thresholds)
+    
         
         combo_probs = average_probabilities(reconstructed_probs, selected_channel_indices)
-        manual_pred = manual_y_predict(combo_probs, thresholds)
-
+        
+        manual_pred = manual_y_predict(combo_probs, threshold)
 
         #dont have any channels, is all combined into one
-        score = objective_score(health_state, manual_pred)
+        score = get_f1_score(health_state, manual_pred)
             
         if score > best_score:
             best_score = score

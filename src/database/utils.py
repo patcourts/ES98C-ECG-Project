@@ -123,10 +123,10 @@ def reconstruct_probs(probs, test_indices, nan_indices, no_patients, n_splits):
 
     for z in range(0, n_splits):
         for i, indice in enumerate(test_indices[z]):
-            reconstructed_probs[allowed_indices[indice]] = probs[z][i][0]
+            reconstructed_probs[allowed_indices[indice]] = probs[z][i][1]
             
-
     return reconstructed_probs
+
 
 def get_reconstructed_probabilities(probs, test_indices, nan_indices, no_patients, n_splits):
     reconstructed_probs = []

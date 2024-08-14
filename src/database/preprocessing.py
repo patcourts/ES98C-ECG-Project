@@ -28,7 +28,7 @@ def denoise(signal, method, normalise=False):
         baseline_removed_signal = filtfilt(b, a, signal)
         
         lowcut = 1 # Lower bound of the band-pass filter
-        highcut = 50  # Upper bound of the band-pass filter
+        highcut = 50  # Upper bound of the band-pass filter, #change to 40
         b, a = butter_bandpass(lowcut, highcut, sample_freq)
         denoised_signal = filtfilt(b, a, baseline_removed_signal)
         

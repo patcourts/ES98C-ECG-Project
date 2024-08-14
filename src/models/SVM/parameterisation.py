@@ -305,12 +305,50 @@ def calculate_sample_entropy(signal, m=2, r=0.2):
     return -np.log((_phi(m + 1)) / (_phi(m)))
 
 
+def calculate_higuchi_fd(time_series, k_max = 50):
+    """
+    Calculate the fractal dimension of a time series using Higuchi's algorithm.
+    
+    Parameters:
+    - time_series: The input time series as a 1D numpy array.
+    - k_max: The maximum value of k (the parameter that controls segment length).
+    
+    Returns:
+    - The estimated fractal dimension.
+    """
+    N = len(time_series)
+    L = np.zeros(k_max)
+    x = np.arange(N)
+
+    for k in range(1, k_max + 1):
+        Lk = np.zeros(k)
+
+        for m in range(0, k):
+            Lmk = 0
+            for i in range(1, int((N - m) / k)):
+                Lmk += abs(time_series[m + i * k] - time_series[m + (i - 1) * k])
+            Lmk = (Lmk * (N - 1) / (int((N - m) / k) * k)) / k
+            Lk[m] = Lmk
+
+        L[k - 1] = np.mean(Lk)
+
+    # Perform linear fit in log-log scale
+    ln_k = np.log(range(1, k_max + 1))
+    ln_L = np.log(L)
+    coeffs = np.polyfit(ln_k, ln_L, 1)
+
+    # The slope of the line is the fractal dimension
+    fractal_dimension = -coeffs[0]
+    
+    return fractal_dimension, coeffs, ln_k, ln_L
+
 def get_nonlinear_params(signals):
     shannon_ens_list = []
     sd1s_list = []
     sd2s_list = []
     sd_ratios_list = []
     samp_ens_list = []
+    higuchi_fd_list = []
 
     for j in range(0, len(signals[0, :])):
         sd1s = []
@@ -318,6 +356,8 @@ def get_nonlinear_params(signals):
         sd_ratios = []
         shannon_en = []
         samp_en = []
+        higuchi_fd = []
+
 
         for signal in signals[:, j]:
             if not np.isnan(signal).all():
@@ -328,16 +368,19 @@ def get_nonlinear_params(signals):
 
                 shannon_en.append(calculate_shannon_entropy(signal))
                 
-                samp_en.append(calculate_sample_entropy(signal))
+                #samp_en.append(calculate_sample_entropy(signal))
+
+                #higuchi_fd.append(calculate_higuchi_fd(signal))
 
             
         sd1s_list.append(sd1s)
         sd2s_list.append(sd2s)
         sd_ratios_list.append(sd_ratios)
         shannon_ens_list.append(shannon_en)
-        samp_ens_list.append(samp_en)
+        #samp_ens_list.append(samp_en)
+        #higuchi_fd_list.append(higuchi_fd_list)
     
-    return sd1s_list, sd2s_list, sd_ratios_list, shannon_ens_list, samp_ens_list
+    return sd1s_list, sd2s_list, sd_ratios_list, shannon_ens_list#, samp_ens_list, higuchi_fd_list
 
 def get_covariates(patients):
     no_patients = patients.count_patients()
@@ -354,7 +397,8 @@ def get_all_params(signals, patients, nan_indices):
     print('calculating frequency domain parameters')
     lfs, hfs, ratios, tps = get_frequency_params(signals)
     print('calculating non linear domain parameters')
-    sd1s, sd2s, sd_ratios, shannon_ens, samp_ens = get_nonlinear_params(signals)
+    #sd1s, sd2s, sd_ratios, shannon_ens, samp_ens, higuchi_fds = get_nonlinear_params(signals) #change to this when doing final graphs, takes agess
+    sd1s, sd2s, sd_ratios, shannon_ens = get_nonlinear_params(signals)
     
     
 
@@ -395,6 +439,7 @@ def get_all_params(signals, patients, nan_indices):
     #params['nk_sd_ratio'] = nk_sd_ratios_list
     #params['sd_ratio_outliers_removed'] = sd_ratios_outliers_removed_list
     #params['fd'] = fd_list
+    #params['higuchi_fd'] = higuchi_fds
 
     #covariates
     params['age'] = ages_list

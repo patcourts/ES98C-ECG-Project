@@ -14,14 +14,6 @@ def tune_hyperparams(params, labels, param_grid, classifier, scorer='balanced_ac
     
     return grid_search.best_estimator_
 
-def get_best_estimators(params, param_grid, scoring_function, classifier, health_state, nan_indices, labels = None):
-    best_estimators = []
-    for i in range(0, len(nan_indices)):
-        if labels is None:
-            best_estimators.append(tune_hyperparams(params[i], health_state[nan_indices[i]], param_grid, classifier, scoring_function))
-        else:
-            best_estimators.append(tune_hyperparams(params[i], labels[i], param_grid, classifier, scoring_function))
-    return best_estimators
 
 def perform_skfold(params, health_state, n_splits, best_estimator, get_probabilities = False):
     
@@ -91,27 +83,6 @@ def perform_skfold(params, health_state, n_splits, best_estimator, get_probabili
     else:
         return all_average_scores
 
-
-def get_scores_and_probs(params, health_state, nan_indices, best_estimators, scoring_function, n_splits=3):
-    n_splits=n_splits
-
-    probs = []
-    thresholds = []
-    y_tests = []
-    test_indices = []
-
-    all_channel_all_scores = {}
-
-    for i in range(0, len(nan_indices)):
-        scores, prob, threshold, y_test, test_indice = skfold_with_probabilities(params[i], health_state[nan_indices[i]], n_splits, best_estimators[i], scoring_function)
-
-        all_channel_all_scores[i] = scores
-        probs.append(prob)
-        thresholds.append(threshold)
-        y_tests.append(y_test)
-        test_indices.append(test_indice)
-    
-    return all_channel_all_scores, probs, thresholds, y_tests, test_indices
 
 def average_probabilities(probs, channels):
     average_probs = []

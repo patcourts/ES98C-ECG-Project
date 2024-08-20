@@ -1,6 +1,6 @@
 from sklearn.model_selection import train_test_split, GridSearchCV, StratifiedKFold
 import numpy as np
-from models.scoring_metrics import get_all_weighted_averaged_metrics, get_f1_score, get_all_metrics
+from models.scoring_metrics import get_all_weighted_averaged_metrics, get_f1_score, get_all_metrics, manual_y_predict
 import itertools
 
 def tune_hyperparams(params, labels, param_grid, classifier, scorer='balanced_accuracy'):
@@ -87,17 +87,6 @@ def average_probabilities(probs, channels):
         average_probs.append(probs[channel])
 
     return np.nanmean(average_probs, axis=0)
-
-def manual_y_predict(average_probs, threshold):#change this back to threshold and see if better??
-    manual_y_pred = np.empty(len(average_probs), dtype=object)
-    for j in range(0, len(average_probs)):
-        if average_probs[j] > threshold:
-            manual_y_pred[j] = 'Healthy'
-        elif average_probs[j] <= threshold:
-            manual_y_pred[j] = 'Unhealthy'
-        elif average_probs[j] is None:
-            manual_y_pred[j] = np.nan
-    return manual_y_pred
 
 def optimise_score_over_channels(reconstructed_probs, threshold, health_state):
     #calculate all possible combinations of channel indices

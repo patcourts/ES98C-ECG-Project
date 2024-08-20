@@ -116,9 +116,9 @@ def make_model(depth, filters, k, print_summary = True):
         cnn.add(Dropout(0.5))
 
     cnn.add(Flatten())
-    cnn.add(Dense(1, activation='sigmoid'))  # use 'softmax' for multi-class classification, 'sigmoid' for binary classification
+    cnn.add(Dense(1, activation='sigmoid'))  # use 'sigmoid' for binary classification
 
-    # Compile the model
+    # compile model
     cnn.compile(optimizer=Adam(), loss='binary_crossentropy', metrics=['accuracy']) #binary cross entropy for binary classification
 
     if print_summary:

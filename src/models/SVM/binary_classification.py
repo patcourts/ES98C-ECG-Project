@@ -1,6 +1,6 @@
 from sklearn.model_selection import train_test_split, GridSearchCV, StratifiedKFold
 import numpy as np
-from models.scoring_metrics import get_all_metrics, get_f1_score
+from models.scoring_metrics import get_all_weighted_averaged_metrics, get_f1_score, get_all_metrics
 import itertools
 
 def tune_hyperparams(params, labels, param_grid, classifier, scorer='balanced_accuracy'):
@@ -27,7 +27,6 @@ def perform_skfold(params, health_state, n_splits, best_estimator, get_probabili
     precision = []
     recall = []
     f1 = []
-    obj_score = []
     test_indices = []
 
     for train_index, test_index in skf.split(params, health_state):
@@ -47,8 +46,10 @@ def perform_skfold(params, health_state, n_splits, best_estimator, get_probabili
         #manual predictions with probabilities
         y_probs = best_estimator.predict_proba(X_test)
         y_pred = (y_probs[:, 1] > threshold).astype(int)
-        
 
+        class_weights = [(1-threshold), threshold]
+        
+        #score_metrics = get_all_weighted_averaged_metrics(y_test, y_pred, class_weights)
         score_metrics = get_all_metrics(y_test, y_pred)
 
         f1.append(score_metrics['f1'])
@@ -56,9 +57,6 @@ def perform_skfold(params, health_state, n_splits, best_estimator, get_probabili
         accuracy.append(score_metrics['accuracy'])
         bal_acc.append(score_metrics['bal acc'])
         precision.append(score_metrics['precision'])
-        obj_score.append(score_metrics['obj score'])
-
-
         
         #for evaluation of model later
         sample_percentages.append(threshold) 
@@ -71,7 +69,6 @@ def perform_skfold(params, health_state, n_splits, best_estimator, get_probabili
     #creating score metric dictionary
     all_average_scores = {}
     all_average_scores['F1 score'] = np.mean(np.array(f1))
-    all_average_scores['Objective score'] = np.mean(np.array(obj_score))
     all_average_scores['Bal Acc'] = np.mean(np.array(bal_acc))
     all_average_scores['Accuracy'] = np.mean(np.array(accuracy))
     all_average_scores['precision'] = np.mean(np.array(precision))

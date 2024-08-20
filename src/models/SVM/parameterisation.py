@@ -370,7 +370,7 @@ def get_nonlinear_params(signals):
                 
                 #samp_en.append(calculate_sample_entropy(signal))
 
-                #higuchi_fd.append(calculate_higuchi_fd(signal))
+                #higuchi_fd.append(calculate_higuchi_fd(signal)[0]) #takes abount 40 mins and not even using optimal parameters
 
             
         sd1s_list.append(sd1s)
@@ -378,7 +378,7 @@ def get_nonlinear_params(signals):
         sd_ratios_list.append(sd_ratios)
         shannon_ens_list.append(shannon_en)
         #samp_ens_list.append(samp_en)
-        #higuchi_fd_list.append(higuchi_fd_list)
+        #higuchi_fd_list.append(higuchi_fd_list) 
     
     return sd1s_list, sd2s_list, sd_ratios_list, shannon_ens_list#, samp_ens_list, higuchi_fd_list
 

@@ -5,6 +5,10 @@ import neurokit2 as nk
 
 
 def filter_database(patients, sample_length:int, duplicate_data_filtering:bool, age_data_filtering:bool, smoking_data_filtering:bool, gender_data_filtering:bool):
+    """
+    function to filter the database based on inputted requirements
+    returns PatientCollection of suitable pateints from inputted database
+    """
     #indexes from the database metadata
     age_meta_idx = 0
     smoking_meta_idx = 8

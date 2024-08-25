@@ -18,7 +18,13 @@ def butter_bandpass(lowcut, highcut, fs, order=5):
     b, a = butter(order, [low, high], btype='band')
     return b, a
 
-def denoise(signal, method, normalise=False):
+def denoise(signal, method: str, normalise=False):
+    """
+    function that denoises a signal
+    signal: signal to be denoised (array)
+    method: with denoising method to be used DWT or butterworth
+    normalise: bool, wether ot normalise signal or not
+    """
     
     sample_freq = 1000
         
@@ -52,7 +58,7 @@ def denoise(signal, method, normalise=False):
 
 
 def denoise_signals(signals, method, normalise_state):
-    #denoising the signals through desired method
+    #denoising all signals through desired method
     if method == 'DWT':
         print('denoising signals through Discrete Wavelet Transform')
     elif method == 'butterworth':

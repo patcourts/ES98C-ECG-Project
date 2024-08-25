@@ -5,14 +5,12 @@ import pandas as pd
 
 def get_accuracy(y_test, y_pred):
     """
-    Calculate the accuracy.
+    calculates the prediction accuracy
 
-    Parameters:
-    y_test (list or array): True labels.
-    y_pred (list or array): Predicted labels.
+    y_test (list or array): true labels
+    y_pred (list or array): predicted labels.
 
-    Returns:
-    float: Accuracy score.
+    returns accuracy score (float)
     """
     # count the number of correct predictions (TP + TN)
     correct_predictions = np.sum(np.array(y_test) == np.array(y_pred))
@@ -25,7 +23,12 @@ def get_accuracy(y_test, y_pred):
 
 def get_balanced_accuracy(y_test, y_pred):
     """
-    balanced accuracy....
+    calculates the balanced accuracy
+
+    y_test (list or array): true labels
+    y_pred (list or array): predicted labels.
+
+    returns balanced accuracy score (float)
     """
     #checking if integers in list or strings
     if y_test[0] == 1 or y_test[0] == 0:
@@ -50,7 +53,12 @@ def get_balanced_accuracy(y_test, y_pred):
 
 def get_specificity(y_test, y_pred):
     """
-    true negative rate
+    aka true negative rate
+
+    y_test (list or array): true labels
+    y_pred (list or array): predicted labels.
+
+    returns specificty score (float)
     """
     true_negative = 0
     false_positive = 0
@@ -63,6 +71,9 @@ def get_specificity(y_test, y_pred):
     return true_negative / (true_negative+false_positive)
 
 def get_precision(y_test, y_pred):
+    """
+    precision of positive (healthy) predictions
+    """
     true_positive = 0
     false_positive = 0
     for i in range(0, len(y_test)):
@@ -73,6 +84,9 @@ def get_precision(y_test, y_pred):
     return true_positive/(true_positive + false_positive)
 
 def get_negative_precision(y_test, y_pred):
+    """
+    precision of negative (unhealthy) predictions
+    """
     true_positive = 0
     false_positive = 0
     for i in range(0, len(y_test)):
@@ -121,7 +135,7 @@ def get_f1_score(y_test, y_pred):
 
 def get_negative_f1_score(y_test, y_pred):
     """
-    balance between precision and recall
+    balance between precision and recall for negative (unhealthy) predictions
     """
     true_positive = 0
     false_positive = 0
@@ -137,7 +151,13 @@ def get_negative_f1_score(y_test, y_pred):
 
 def scoring_function(model, X, y):
     """
-    change to incorporate balanced accuracy 
+    can be used to create a custom scoring function
+
+    model: classification model to be used to make predictions
+    X: data
+    y: labels
+
+    return float representing performance
     """
     
     y_pred = model.predict(X)
@@ -151,7 +171,7 @@ def scoring_function(model, X, y):
 
 def objective_score(y_test, y_pred):
     """
-    change to incorporate balanced accuracy 
+    can be used to create custom scoring function
     """
     balanced_acc = get_balanced_accuracy(y_test, y_pred)
 
@@ -161,6 +181,9 @@ def objective_score(y_test, y_pred):
     return f1*0.7 + balanced_acc*0.3
 
 def get_av_confusion_matrix(y_test, y_pred):
+    """
+    function to average several confusion matrices from each skfold iteration
+    """
     av_confusion_mat = np.zeros(shape = (len(y_test), 2, 2))
     for i in range(0, len(y_test)):
         av_confusion_mat[i] = confusion_matrix(y_test[i], y_pred[i])
@@ -168,18 +191,15 @@ def get_av_confusion_matrix(y_test, y_pred):
 
 def print_scores_for_channel(all_scores):
     """
-    Prints score metrics for each channel.
-    
-    Parameters:
-    all_scores (dict): A dictionary where the key is the channel number and the value is another dictionary
-                       containing various score metrics.
+    prints score metrics for each channel provided inputted dictionary of scores
+
     """
 
-    # Extract the score metrics from the first channel
+    # get channel names from keys
     channels = all_scores.keys()
     score_metrics = list(next(iter(all_scores.values())).keys())
 
-    # Constructing the data dictionary dynamically
+    # dynamically construct dictionary
     data = {'Success Metric': score_metrics}
 
     for channel in channels:
@@ -187,7 +207,7 @@ def print_scores_for_channel(all_scores):
         channel_scores = [f"{all_scores[channel][metric]}" for metric in score_metrics]
         data[channel_key] = channel_scores
 
-    # Creating and displaying the DataFrame
+    # printing pandas dataframe
     df = pd.DataFrame(data)
     print(df)
 
@@ -195,6 +215,10 @@ def print_scores_for_channel(all_scores):
 
 
 def get_all_metrics(y_test, y_pred):
+    """
+    function to claculate all score metrics (postitve (healthy) predictions)
+    returns dictionary of each metric
+    """
     metrics = {}
     metrics['bal acc'] = get_balanced_accuracy(y_test, y_pred)
     metrics['accuracy'] = get_accuracy(y_test, y_pred)
@@ -205,6 +229,10 @@ def get_all_metrics(y_test, y_pred):
     return metrics
 
 def get_all_weighted_averaged_metrics(y_test, y_pred, class_weight):
+    """
+    calculates the weighted metrics (postive and negative accuracy)
+    returns dictionary of metrics
+    """
     metrics = {}
     metrics['bal acc'] = get_balanced_accuracy(y_test, y_pred)
     metrics['accuracy'] = get_accuracy(y_test, y_pred)
@@ -227,7 +255,12 @@ def get_all_weighted_averaged_metrics(y_test, y_pred, class_weight):
 
     return metrics
 
-def manual_y_predict(average_probs, threshold):#change this back to threshold and see if better??
+def manual_y_predict(average_probs, threshold):
+    """
+    function to obtain manual preditions from probability arrays based on the thresholds for that probaility array
+
+    returns array of maunal predictions
+    """
     manual_y_pred = np.empty(len(average_probs), dtype=object)
     for j in range(0, len(average_probs)):
         if average_probs[j] > threshold:

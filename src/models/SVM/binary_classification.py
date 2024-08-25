@@ -4,6 +4,17 @@ from models.scoring_metrics import get_all_weighted_averaged_metrics, get_f1_sco
 import itertools
 
 def tune_hyperparams(params, labels, param_grid, classifier, scorer='balanced_accuracy'):
+    """
+    fucntion that perfroms a gridsearch to find the best hyperparameters for the classifier based on the parameters
+
+    params: array of parameters to be classified
+    labels: corresponding labels 
+    param_grid: dictionary containing the hyperparameters for the gridsearch to iterate over
+    classifier: model with which the gridsearch is using to test the performane
+    scorer: metric with which the performance is tested
+
+    returns classifier with optimal parameters
+    """
     
     X_train, X_test, y_train, y_test = train_test_split(params, labels, test_size=0.3, stratify=labels)
 
@@ -16,6 +27,17 @@ def tune_hyperparams(params, labels, param_grid, classifier, scorer='balanced_ac
 
 
 def perform_skfold(params, health_state, n_splits, best_estimator, get_probabilities = False):
+    """
+    function that splits data through SKfold then trains and evaluates model on each split
+
+    params: selected features
+    health_state: labels 
+    n_splits: number of splits for skfold
+    best_estimator: optimised classifier to be used
+    get_probabilities: option to return probabilities for reconstruction
+
+    returns average scores over each split or if get_probabilities is true the information needed to reconstruct probabilities
+    """
     
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42) #can do repeated skf for better validation
     
@@ -82,6 +104,9 @@ def perform_skfold(params, health_state, n_splits, best_estimator, get_probabili
 
 
 def average_probabilities(probs, channels):
+    """
+    function to calculate the average probability for desired channels
+    """
     average_probs = []
     for channel in channels:
         average_probs.append(probs[channel])
@@ -89,6 +114,15 @@ def average_probabilities(probs, channels):
     return np.nanmean(average_probs, axis=0)
 
 def optimise_score_over_channels(reconstructed_probs, threshold, health_state):
+    """
+    function to find the channels that optimise the perfromance through exhaustive search
+
+    reconstructed_probs: total average probabilities for each channel
+    threshold: threshold for making prediction based on class weights
+    health_state: true class labels
+
+    returns optimised score and the indices for the channels that lead to this
+    """
     #calculate all possible combinations of channel indices
     channel_indices_list = [0, 1, 2, 3, 4, 5]
     all_combinations = []

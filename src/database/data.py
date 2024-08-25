@@ -10,8 +10,21 @@ import wfdb
 
 
 class Data:
+    """
+    class to store extracted and filtered ecg signals and their corresponding labels
+    """
 
     def __init__(self, database: str, denoise_method: str, estimation_method: str, train_splits: dict, binary: bool, parameterisation: bool):
+        """
+        initialising the class
+
+        database (str): a valid database to be used from within the wfdb package
+        denoise method: DWT, butterworth or None
+        estimation method: machine learning paradigm - CNN or SVM
+        train_splits: dictionary representing the desired splits, None if no split required
+        binary (bool): option for binary or multiclasification labels to be returned
+        parameterisation (bool): option to calculate and return parameters or not
+        """
         #determining methods to be used
         self.patients = wfdb.get_record_list(database)
         self.denoise_method = denoise_method
@@ -39,6 +52,10 @@ class Data:
 
 
     def filter_database(self):
+        """
+        function to filter the chosen database based on filters below
+        returns database of patients passing the filtering
+        """
         #Stating which filters too apply
         duplicate_data_filtering = True
         desired_sample_length = 60000
@@ -59,6 +76,9 @@ class Data:
         return self.health_state
 
     def get_nan_indices(self):
+        """
+        function to find location of nan signals for each patient and each channel
+        """
         nan_indices = []
         for j in range(0, len(self.signals[0, :])):
             signal_nan_indices = []
@@ -191,6 +211,9 @@ class Data:
             
 
     def run(self):
+        """
+        run the data preprocessing steps as desired based on the init function
+        """
         self.filter_database()
         self.get_signals()
         self.get_health_state()

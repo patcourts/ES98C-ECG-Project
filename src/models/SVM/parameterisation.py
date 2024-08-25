@@ -20,7 +20,7 @@ def outliers_indices_z_score(data, threshold=2):
 
 def get_peaks(sig):
     """
-    returns the location of the peaks (calculated through neurokit) and their average amplitude
+    returns the location of RR peaks (calculated through neurokit) and their average amplitude
     """
     #using neurokit to find the location of the r peaks
     peak_dict, info = nk.ecg_peaks(sig, sampling_rate=1000)
@@ -80,6 +80,9 @@ def RR_analysis(signal, remove_outliers=False):
 
 
 def QRS_complex(signal):
+    """
+    calculates the mean and std deviation of the duration of qrs intervals within the signal
+    """
     #required nk cleaned signal
     cleaned_signal = nk.ecg_clean(signal, sampling_rate=1000)
     
@@ -110,6 +113,9 @@ def get_moments(signal):
     return mean, std, skew_ecg, kurtosis_ecg
 
 def get_time_params(signals):
+    """
+    function that claculates and returns all the time domain parameters calculated from the signal
+    """
     means_list = []
     stds_list = []
     skews_list = []
@@ -207,6 +213,9 @@ def power_bands(signal):
     return lf_power, hf_power, lf_power/hf_power, total_power
 
 def get_frequency_params(signals):
+    """
+    calculates and returns all frequency domain parameters from the signals
+    """
     lfs_list = []
     hfs_list = []
     ratios_list = []
@@ -235,6 +244,10 @@ def get_frequency_params(signals):
 
 
 def calculate_poincare_sd(sig, remove_outliers=False, use_nk=False):
+    """
+    calculates the sd of the poincare plot and the ratio from a signal
+    has option to remove outliers as well as use the neurokit method intead
+    """
     #get rr intervals
     rr_intervals = get_rri(sig)[0]
     
@@ -258,7 +271,6 @@ def calculate_poincare_sd(sig, remove_outliers=False, use_nk=False):
     sum_rr = rr_n + rr_n1
     sd2 = np.sqrt(np.var(sum_rr/np.sqrt(2)))
     
-    # calculating ratio
     sd_ratio = sd2/sd1
    
     if remove_outliers:
@@ -274,6 +286,12 @@ def calculate_poincare_sd(sig, remove_outliers=False, use_nk=False):
     
 
 def calculate_shannon_entropy(signal, num_bins=500, use_nk=False):
+    """
+    calculate shannon entropy of a signal
+
+    num_bins (int): number of bins used in histogram
+    has option to use the method within neurokit2
+    """
     rr_intervals = get_rri(signal)[0]
     
     if use_nk:
@@ -293,6 +311,12 @@ def calculate_shannon_entropy(signal, num_bins=500, use_nk=False):
 
 
 def calculate_sample_entropy(signal, m=2, r=0.2):
+    """
+    calculates the sample entropy of a signal
+
+    r (float): tolerance, usually 0.2*std of signal
+    m (int): embedding dimension
+    """
     rr_intervals = get_rri(signal)[0]
     N = len(rr_intervals)
     r *= np.std(rr_intervals)  # tolerance r is usually set as a fraction of the standard deviation
@@ -310,11 +334,10 @@ def calculate_higuchi_fd(time_series, k_max = 50):
     Calculate the fractal dimension of a time series using Higuchi's algorithm.
     
     Parameters:
-    - time_series: The input time series as a 1D numpy array.
-    - k_max: The maximum value of k (the parameter that controls segment length).
+    - time_series: the ecg signal or time series to be measured
+    - k_max: The maximum value of k (controls segment length)
     
-    Returns:
-    - The estimated fractal dimension.
+    Returns the estimated fractal dimension, linear fit coefficients and log values
     """
     N = len(time_series)
     L = np.zeros(k_max)
@@ -332,17 +355,20 @@ def calculate_higuchi_fd(time_series, k_max = 50):
 
         L[k - 1] = np.mean(Lk)
 
-    # Perform linear fit in log-log scale
+    #performs linear fit in log-log scale
     ln_k = np.log(range(1, k_max + 1))
     ln_L = np.log(L)
     coeffs = np.polyfit(ln_k, ln_L, 1)
 
-    # The slope of the line is the fractal dimension
+    #slope of the line is the fractal dimension
     fractal_dimension = -coeffs[0]
     
     return fractal_dimension, coeffs, ln_k, ln_L
 
 def get_nonlinear_params(signals):
+    """
+    calculates all the non linear parameters as desired for the signals
+    """
     shannon_ens_list = []
     sd1s_list = []
     sd2s_list = []
@@ -383,6 +409,10 @@ def get_nonlinear_params(signals):
     return sd1s_list, sd2s_list, sd_ratios_list, shannon_ens_list#, samp_ens_list, higuchi_fd_list
 
 def get_covariates(patients):
+    """
+    function to get the covariates of the patients within the database, age only
+    patients: PatientCollection
+    """
     no_patients = patients.count_patients()
     ages=np.zeros(no_patients)
     for i in range(0, no_patients):
@@ -392,6 +422,11 @@ def get_covariates(patients):
 
 
 def get_all_params(signals, patients, nan_indices):
+    """
+    calculates all params from every domain for the signals as well as the age covariate
+
+    returns dictionary of all params
+    """
     print('calculating time domain parameters')
     rr_means, rr_stds, rr_RMSSD, rr_pNN50s, rr_amps, means, stds, skews, kurtosiss = get_time_params(signals)
     print('calculating frequency domain parameters')

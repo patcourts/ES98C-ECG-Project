@@ -15,16 +15,12 @@ from sklearn.utils import class_weight
 import numpy as np
 
 
-
-train_splits = {}
-train_splits['train'] = 0.7
-train_splits['test'] = 0.3
-
-
-
 def get_data_CNN(splits, denoise_method):
-    #train spit shouldnt be in here because takes ages to do first bits....
-
+    """
+    creates data instance and returns complete ecg signals as need for CNN
+    data denoised based on denoise method
+    data split based on splits
+    """
     #creating DATA object
     ptb_binary_NN = Data(database = 'ptbdb', denoise_method=denoise_method, estimation_method = 'NN', train_splits=splits, binary = True, parameterisation = False)
 
@@ -47,6 +43,10 @@ def scale_data(data, scale_factor=0.1):
     return augmented_data
 
 def augment_data(data):
+    """
+    function to augment data if more datapoints required
+    input a signal and returns the signal, time shifted signal and scaled signal
+    """
     augmented_data = []
     for signal in data:
         augmented_data.append(signal)
@@ -55,6 +55,11 @@ def augment_data(data):
     return np.array(augmented_data)
 
 def convert_data_to_CNN_format(data, channel_indices):
+    """
+    converts dictionary containing signals into correct form for use in CNN
+    has option to state the desired channels to be flattened
+    returns converted data, encoded labels, class weights
+    """
     X_train_all = []
     X_test_all = []
     y_train_all = []
@@ -77,9 +82,6 @@ def convert_data_to_CNN_format(data, channel_indices):
     y_test_all_list = [element for array in y_test_all for element in array]
 
     #encoding y labels for CNN
-    # label_encoder = LabelEncoder()
-    # y_train_all_encoded = label_encoder.fit_transform(y_train_all_list)
-    # y_test_all_encoded = label_encoder.transform(y_test_all_list)
     y_train_all_encoded = [0 if label == 'Unhealthy' else 1 for label in y_train_all_list]
     y_test_all_encoded = [0 if label == 'Unhealthy' else 1 for label in y_test_all_list]
 
@@ -104,7 +106,17 @@ def convert_data_to_CNN_format(data, channel_indices):
     return converted_data, y_test_all_list, class_weights_dict
 
 
-def make_model(depth, filters, k, print_summary = True):
+def make_model(depth: int, filters: int, k: int, print_summary = True):
+    """
+    function to make and compile CNN model
+
+    depth: number of repeats of main block
+    filters: number of filters used in each convolutional layer
+    k: size of kernel (filter)
+    has option to print summary of the model to check succesful compilation
+
+    returns compiled model
+    """
     # initialise model
     cnn = Sequential()
 
@@ -127,7 +139,20 @@ def make_model(depth, filters, k, print_summary = True):
     return cnn
 
 
-def train_model(model, data, class_weights, EPOCHS, BATCH_SIZE):
+def train_model(model, data: dict, class_weights: dict, EPOCHS: int, BATCH_SIZE: int):
+    """
+    function to train a compiled model
+
+    model: the compiled model to be trained
+    data: dict containg train and test data
+    class_weights: dict containing weighting for each class
+    EPOCHS: number of epochs of training
+    BATCH_SIZE: size of the batches used to perform learning on
+
+    returns the trained model and a dictionary containing the history of the models progress
+    """
+
+    #regularisation technique to return the model to the best weights if overfitting occurs
     early_stopping = EarlyStopping(monitor='val_accuracy', patience=5, restore_best_weights=True)
 
     history = model.fit(
@@ -142,23 +167,28 @@ def train_model(model, data, class_weights, EPOCHS, BATCH_SIZE):
 
 
 def get_split_data(split_percents, data, labels):
-        split_data_dict = {}
-        train_split = split_percents['train']
-        test_split = split_percents['test']
-       # val_split = split_percents['val']
-        if train_split + test_split != 1:
-            print('percentages dont total 1')
-            return None
-        else:
-            print('splitting data into test and train')
-            
-            for i in range(0, 6):
-                split_data = {}
-                X_train, X_test, y_train, y_test = train_test_split(data[i], labels[i], test_size=test_split, stratify=labels[i])
-                split_data['X_train'] = X_train
-                split_data['X_test'] = X_test
-                split_data['y_train'] = y_train
-                split_data['y_test'] = y_test
-                split_data_dict[i] = split_data
+    """
+    function to split the data and corresponding labels in given ratio
 
-            return split_data_dict
+    returns dictionary of split data
+    """
+    split_data_dict = {}
+    train_split = split_percents['train']
+    test_split = split_percents['test']
+    # val_split = split_percents['val']
+    if train_split + test_split != 1:
+        print('percentages dont total 1')
+        return None
+    else:
+        print('splitting data into test and train')
+        
+        for i in range(0, 6):
+            split_data = {}
+            X_train, X_test, y_train, y_test = train_test_split(data[i], labels[i], test_size=test_split, stratify=labels[i])
+            split_data['X_train'] = X_train
+            split_data['X_test'] = X_test
+            split_data['y_train'] = y_train
+            split_data['y_test'] = y_test
+            split_data_dict[i] = split_data
+
+        return split_data_dict

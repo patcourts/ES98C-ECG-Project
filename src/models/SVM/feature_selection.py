@@ -8,6 +8,17 @@ from database.utils import reduce_parameter_set, reduce_parameter_set_single, co
 
 
 def forward_selection(params, health_state, method, scorer=scoring_function, k=6):
+    """
+    function to perform forward selection wrapper method to selected best performing features
+
+    params: array of features
+    health_state: list of true labels
+    method: classifier to be used
+    scorer: metric to be optimised
+    k: number of features to be selected
+
+    returns list of indices of selected parameters
+    """
     
     X_train, X_test, y_train, y_test = train_test_split(params, health_state, test_size=0.3, stratify = health_state)
 
@@ -19,29 +30,54 @@ def forward_selection(params, health_state, method, scorer=scoring_function, k=6
     elif method == 'KNN':
         estimator = KNeighborsClassifier()
 
-    SFS_forward = SequentialFeatureSelector(estimator=estimator, scoring=scoring_function, cv=3, n_features_to_select=k)
+    #sfs wrapper method with 3 fold cross validation
+    SFS_forward = SequentialFeatureSelector(estimator=estimator, scoring=scorer, cv=3, n_features_to_select=k)
 
     SFS_forward.fit(X_train, y_train)
 
+    #find indices of best performing parameters
     selected_indices = SFS_forward.get_support(indices=True)
     
     return selected_indices
 
 
 def filter_method(params, health_state, k=6, scorer=mutual_info_classif):
-    # Apply SelectKBest with mutual information
+    """
+    function that selects optimal features based on their stastical performance
+
+    params: features to select from
+    health_state: true labels
+    k: number of features to select
+    scorer: metric with which features are judged
+
+    returns indices of selected features
+    """
+
+    # SelectKBest with mutual information
     selector = SelectKBest(score_func=scorer, k=k)
     
     
     X_new = selector.fit_transform(params, health_state)
     
-    # Get the indices of selected features
+    #get indices of selected features
     selected_indices = selector.get_support(indices=True)
     
     return selected_indices
 
 
 def select_features(params, params_array, health_state, nan_indices, desired_no_feats, method):
+    """
+    function that selects the optimal features from total parameters space
+
+    params: dict of params for each channel
+    params_array: array of params
+    health_state: true labels
+    nan_indices: location of non signals to be skipped when doing calculations
+    desired_no_feats: number of features to be selected from total array
+    method: classifier used 
+
+    returns dictionary of selected parameters for each channels and their values
+    """
     selected_params = {}
     print(f'selecting {desired_no_feats} most important features')
     for i in range(0, len(nan_indices)):

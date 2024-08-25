@@ -4,6 +4,11 @@ import neurokit2 as nk
 from database.patients import PatientCollection
 
 def get_sig_array_from_patients(patients: PatientCollection, invert_signals=False):
+    """
+    function to get array of signals from a PatientCollection class as this is alot easier to work with
+    has option to invert any signals that are deemed to require inverting if desired
+    returns array of shape (no_patients, no_channels, sample_length)
+    """
     no_patients = patients.count_patients()
     sample_length = patients.get_patients(0).get_desired_sample_length()
     channel_list = patients.get_patients(0).get_channel_names()
@@ -93,6 +98,9 @@ def convert_single_dict_to_array(params, health_state):
     return params_array, no_features
 
 def reduce_parameter_set(params, selected_indices, channel):
+    """
+    function to reduce the selected features dictionaries
+    """
     select_params = {}
     for i, key in enumerate(params.keys()):
         if i in selected_indices:
@@ -117,6 +125,9 @@ def convert_multi_dict_to_array1(params_dict, nan_indices, health_state):
     return params_list, no_features
 
 def reconstruct_probs(probs, test_indices, nan_indices, no_patients, n_splits):
+    """
+    function to reconstruct complete probabilities from skfold test train split
+    """
     reconstructed_probs = np.zeros(no_patients)
     reconstructed_probs[~nan_indices] = np.nan
     allowed_indices = np.arange(0, no_patients)[nan_indices]

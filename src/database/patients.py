@@ -4,6 +4,9 @@ import matplotlib.pyplot as plt
 
 
 class Patient:
+    """
+    class to store the necessary information for each specific patient
+    """
     def __init__(self, name, age, gender, health_state, diagnosis, smoker):
         self._docstring = str
         self._name = str
@@ -114,6 +117,9 @@ class Patient:
         
         
 class PatientCollection:
+    """
+    class to store necesary info and functions for group of patients
+    """
     def __init__(self):
         self._patients = []
         self._diagnosis_list = ['Myocardial infarction', 'Healthy control', 'Dysrhythmia', 'Cardiomyopathy', 'Hypertrophy', 'Bundle branch block', 'Valvular heart disease', 'Stable angina', 'Myocarditis']

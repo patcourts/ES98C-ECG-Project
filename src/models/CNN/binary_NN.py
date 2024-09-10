@@ -6,8 +6,7 @@ from tensorflow.keras.layers import Conv1D, BatchNormalization, Activation, MaxP
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import EarlyStopping
 
-#used to encoded strings to binary 
-from sklearn.preprocessing import LabelEncoder
+
 from sklearn.model_selection import train_test_split
 #used for class weighting
 from sklearn.utils import class_weight
